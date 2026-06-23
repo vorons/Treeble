@@ -120,6 +120,11 @@ void ResourceServer::on_request(_SoupServer * /*server*/,
 
     std::fprintf(stderr, "[ResourceServer] GET %s -> %s\n", path, file_path.c_str());
 
+    // Recover leading slash that was lost when the browser normalized
+    // //home into /home in the URL path
+    if (!file_path.empty() && file_path[0] != '/')
+        file_path.insert(0, 1, '/');
+
     // ── reject path traversal ───────────────────────────────────────────
     // Only absolute paths (starting with /) are valid; reject any containing ..
     if (file_path.empty() || file_path[0] != '/' ||
@@ -135,14 +140,6 @@ void ResourceServer::on_request(_SoupServer * /*server*/,
 
     // ── open file ─────────────────────────────────────────────────────
     std::ifstream file(file_path, std::ios::binary | std::ios::ate);
-    if (!file)
-    {
-        // try with leading slash
-        auto alt = "/" + file_path;
-        file.open(alt, std::ios::binary | std::ios::ate);
-        if (file)
-            file_path = alt;
-    }
 
     if (!file)
     {
