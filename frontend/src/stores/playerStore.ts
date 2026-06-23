@@ -49,7 +49,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
   },
 
   playTrack: async (index: number) => {
-    const { currentFolder } = get();
+    const { currentFolder, folderTracks } = get();
     if (!currentFolder) return;
     // Sets the backend queue to currentFolder's tracks and plays at index.
     await playInFolder(currentFolder, index);
@@ -59,6 +59,8 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
       currentIndex: index,
       positionSec: 0,
       currentQueueFolder: currentFolder,
+      // Sync frontend queue so StatusBar/TrackList can read it immediately
+      queue: folderTracks,
     });
   },
 
