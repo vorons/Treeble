@@ -12,8 +12,13 @@ interface PlayerStore extends PlayerState {
   /** Which folder the playback queue belongs to (null = none) */
   currentQueueFolder: string | null;
 
+  // ── Sorting ──
+  sortField: 'title' | 'duration' | null;
+  sortDir: 'asc' | 'desc';
+
   // ── Actions ──
   init: () => Promise<void>;
+  setSort: (field: 'title' | 'duration' | null, dir: 'asc' | 'desc') => void;
   selectFolder: (dir: string) => Promise<void>;
   playTrack: (index: number) => Promise<void>;
   togglePause: () => Promise<void>;
@@ -34,6 +39,8 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
   tree: null,
   folderTracks: [],
   currentFolder: null,
+  sortField: null,
+  sortDir: 'asc',
   currentQueueFolder: null,
 
   init: async () => {
@@ -93,6 +100,8 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
   changeVolume: async (vol: number) => {
     await setVolume(vol);
   },
+
+  setSort: (field, dir) => set({ sortField: field, sortDir: dir }),
 
   onAudioEvent: async (type: string, pos: number, dur: number) => {
     await audioEvent(type, pos, dur);
