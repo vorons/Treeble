@@ -19,7 +19,7 @@ export default function StatusBar() {
   return (
     <div className="flex items-center justify-between border-t border-border bg-black/20 px-4 py-1 text-xs text-muted-foreground shrink-0">
       <span>
-        {folderName ? `${folderName} — ${count} file${count !== 1 ? "s" : ""}` : playing ? "Playing" : "No folder selected"}
+        {folderName && count > 0 ? `${folderName} — track ${currentIndex + 1}/${count}` : folderName ? `${folderName} — no tracks` : playing ? "Playing" : "No folder selected"}
       </span>
       <span className="truncate ml-4 text-right">
         {currentTrack ? currentTrack.title : "\u00a0"}
