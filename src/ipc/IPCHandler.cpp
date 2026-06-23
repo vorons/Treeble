@@ -170,6 +170,7 @@ IPCHandler::IPCHandler(saucer::smartview &wv, FileScanner &fs, TagReader &tr,
     // Frontend calls this when <audio> fires ended / timeupdate / error
     wv.expose("audioEvent", [this](const std::string &type, double position, double duration)
     {
+        std::fprintf(stderr, "[audioEvent] type=%s pos=%.2f dur=%.2f\n", type.c_str(), position, duration);
         m_ab.on_event(type, position, duration);
 
         if (type == "ended")

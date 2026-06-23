@@ -18,12 +18,19 @@ export default function App() {
       onAudioEvent("timeupdate", el.currentTime, el.duration);
     };
 
+    const safeDur = () => Number.isFinite(el.duration) ? el.duration : 0;
+    const safePos = () => Number.isFinite(el.currentTime) ? el.currentTime : 0;
+
     const onEnded = () => {
-      onAudioEvent("ended", el.currentTime, el.duration);
+      onAudioEvent("ended", safePos(), safeDur());
     };
 
     const onError = () => {
-      onAudioEvent("error", el.currentTime, el.duration);
+      const mediaErr = el.error;
+      const code = mediaErr?.code ?? -1;
+      const msg = mediaErr?.message ?? "unknown";
+      console.error(`[audio] error event code=${code} message=${msg}`);
+      onAudioEvent("error", safePos(), safeDur());
     };
 
     el.addEventListener("timeupdate", onTimeUpdate);
@@ -44,10 +51,13 @@ export default function App() {
 
     (window as unknown as Record<string, unknown>).audioPlayer = {
       load: (src: string) => {
-        el.src = `app://audio${src}`;
+        const base = (window as any).__audioBaseURL || 'http://127.0.0.1:0';
+        el.src = `${base}/audio${src}`;
         el.load();
       },
-      play: () => { el.play().catch(() => {}); },
+      play: () => {
+        el.play().catch((e) => { console.error("[audio] play error:", e); });
+      },
       pause: () => { el.pause(); },
       seek: (sec: number) => { el.currentTime = sec; },
       setVolume: (vol: number) => { el.volume = vol; },

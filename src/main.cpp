@@ -27,6 +27,14 @@ static std::string music_dir()
 
 coco::stray start(saucer::application *app)
 {
+    // ── local HTTP server for audio ──────────────────────────────────────
+    ResourceServer audio_server;
+    if (!audio_server.start())
+    {
+        std::fprintf(stderr, "Fatal: could not start audio HTTP server\n");
+        co_return;
+    }
+
     // ── window ────────────────────────────────────────────────────────────
     auto window  = saucer::window::create(app).value();
     auto webview = saucer::smartview::create({.window = window});
@@ -44,11 +52,25 @@ coco::stray start(saucer::application *app)
     PlayerState       state;
     WebViewAudioBackend audio(*webview);
     MPRIS2            mpris;
-    ResourceServer    res_server(*webview);
+    // ResourceServer already owns the HTTP server; register with IPC
     IPCHandler        ipc(*webview, scanner, tag_reader, audio, mpris, state);
 
     // ── embedded frontend ─────────────────────────────────────────────────
     webview->embed(saucer::embedded::all());
+    webview->set_dev_tools(true);
+
+    // ── inject audio base URL into JS ─────────────────────────────────────
+    // This must be done BEFORE serving the page, so the frontend has it
+    auto base_url = audio_server.base_url();
+    webview->expose("__audioBaseURL", [base_url]() -> std::string
+    {
+        return base_url;
+    });
+    // ponytail: avoid std::format in consteval context
+    // Use base webview::execute (cstring_view) not smartview::execute (format_string)
+    auto js = "window.__audioBaseURL = '" + base_url + "';";
+    static_cast<saucer::webview &>(*webview).execute(js);
+
     webview->serve("/index.html");
 
     window->show();
@@ -61,9 +83,6 @@ int main()
 {
     try
     {
-        // Register custom scheme before any webview creation
-        ResourceServer::register_scheme();
-
         return saucer::application::create({.id = "treeble"})->run(start);
     }
     catch (const std::exception &e)

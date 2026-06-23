@@ -1,141 +1,217 @@
 #include "ResourceServer.h"
-#include <saucer/smartview.hpp>
+
+#include <libsoup/soup.h>
+
 #include <fstream>
 #include <filesystem>
 #include <cstdio>
 #include <cstring>
+#include <cstdlib>
+#include <algorithm>
+#include <cerrno>
+#include <functional>
 
 namespace fs = std::filesystem;
 
-void ResourceServer::register_scheme()
+struct ResourceServer::Impl
 {
-    saucer::webview::register_scheme("app");
+    _SoupServer *server{};
+    int port_num{0};
+    std::string base;
+};
+
+ResourceServer::ResourceServer()
+    : m_impl(std::make_unique<Impl>())
+{
 }
 
-ResourceServer::ResourceServer(saucer::smartview &wv)
+ResourceServer::~ResourceServer()
 {
-    wv.handle_scheme("app", [this](const saucer::scheme::request &req,
-                                   const saucer::scheme::executor &exec)
+    if (m_impl->server)
+        g_object_unref(m_impl->server);
+}
+
+bool ResourceServer::start()
+{
+    auto *server = soup_server_new(nullptr);
+    if (!server)
+        return false;
+
+    // Listen on all interfaces, random port
+    GError *error = nullptr;
+    if (!soup_server_listen_all(server, 0, static_cast<SoupServerListenOptions>(0), &error))
     {
-        auto url       = req.url();
-        auto url_str   = url.string();
-        auto file_path = url.path().string();
+        std::fprintf(stderr, "[ResourceServer] failed to listen: %s\n", error->message);
+        g_error_free(error);
+        g_object_unref(server);
+        return false;
+    }
 
-        std::fprintf(stderr, "[ResourceServer] url=%s  path=%s\n", url_str.c_str(), file_path.c_str());
+    // Get the actual port
+    int port = 0;
+    GSList *uris = soup_server_get_uris(server);
+    for (GSList *l = uris; l; l = l->next)
+    {
+        auto *uri = static_cast<GUri *>(l->data);
+        port = g_uri_get_port(uri);
+        if (port > 0)
+            break;
+    }
+    g_slist_free_full(uris, reinterpret_cast<GDestroyNotify>(g_uri_unref));
 
-        // ── open file ─────────────────────────────────────────────────────
-        std::ifstream file(file_path, std::ios::binary | std::ios::ate);
-        if (!file)
+    if (port <= 0)
+    {
+        std::fprintf(stderr, "[ResourceServer] could not determine port\n");
+        g_object_unref(server);
+        return false;
+    }
+
+    // Register request handler
+    soup_server_add_handler(server, "/audio",
+                            reinterpret_cast<SoupServerCallback>(&on_request),
+                            this, nullptr);
+
+    m_impl->server  = server;
+    m_impl->port_num = port;
+    m_impl->base     = "http://127.0.0.1:" + std::to_string(port);
+
+    std::fprintf(stderr, "[ResourceServer] listening on port %d\n", port);
+    return true;
+}
+
+int ResourceServer::port() const
+{
+    return m_impl->port_num;
+}
+
+std::string ResourceServer::base_url() const
+{
+    return m_impl->base;
+}
+
+// ── static helpers ─────────────────────────────────────────────────────────
+
+std::string ResourceServer::mime_type(const std::string &ext)
+{
+    if (ext == ".flac")      return "audio/flac";
+    if (ext == ".wav")       return "audio/wav";
+    if (ext == ".ogg" || ext == ".opus") return "audio/ogg";
+    if (ext == ".m4a")       return "audio/mp4";
+    return "audio/mpeg";
+}
+
+void ResourceServer::on_request(_SoupServer * /*server*/,
+                                _SoupServerMessage *msg,
+                                const char *path,
+                                void * /*query*/,
+                                void *user_data)
+{
+    auto *self = static_cast<ResourceServer *>(user_data);
+
+    // Path comes as "/audio/...", extract the part after "/audio/"
+    std::string p(path ? path : "");
+    if (p.rfind("/audio/", 0) == 0)
+        p = p.substr(7); // strip "/audio/"
+
+    // URL-decode the path
+    auto *decoded = g_uri_unescape_string(p.c_str(), nullptr);
+    std::string file_path = decoded ? decoded : p;
+    g_free(decoded);
+
+    std::fprintf(stderr, "[ResourceServer] GET %s -> %s\n", path, file_path.c_str());
+
+    // ── open file ─────────────────────────────────────────────────────
+    std::ifstream file(file_path, std::ios::binary | std::ios::ate);
+    if (!file)
+    {
+        // try with leading slash
+        auto alt = "/" + file_path;
+        file.open(alt, std::ios::binary | std::ios::ate);
+        if (file)
+            file_path = alt;
+    }
+
+    if (!file)
+    {
+        std::fprintf(stderr, "[ResourceServer] not found: %s\n", file_path.c_str());
+        soup_server_message_set_status(msg, SOUP_STATUS_NOT_FOUND, nullptr);
+        auto *headers = soup_server_message_get_response_headers(msg);
+        soup_message_headers_append(headers, "Access-Control-Allow-Origin", "*");
+        return;
+    }
+
+    auto file_size = static_cast<std::size_t>(file.tellg());
+    file.seekg(0);
+
+    std::fprintf(stderr, "[ResourceServer] serving %s (%zu bytes)\n", file_path.c_str(), file_size);
+
+    // ── MIME type ────────────────────────────────────────────────────
+    auto ext = fs::path(file_path).extension().string();
+    for (auto &c : ext) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    std::string mime = mime_type(ext);
+
+    // ── Parse Range header ───────────────────────────────────────────
+    auto *req_headers = soup_server_message_get_request_headers(msg);
+    const char *range_str = soup_message_headers_get_one(req_headers, "Range");
+
+    std::size_t range_start = 0;
+    std::size_t range_end   = file_size - 1;
+    bool has_range = false;
+
+    if (range_str)
+    {
+        std::fprintf(stderr, "[ResourceServer] Range: %s\n", range_str);
+        // Parse "bytes=N-M" or "bytes=N-"
+        std::string_view rv(range_str);
+        if (rv.starts_with("bytes="))
         {
-            std::fprintf(stderr, "[ResourceServer] cannot open: %s\n", file_path.c_str());
-
-            // Check if the path might need a leading /
-            auto alt = "/" + file_path;
-            file.open(alt, std::ios::binary | std::ios::ate);
-            if (file)
-                file_path = alt;
-        }
-
-        if (!file)
-        {
-            std::fprintf(stderr, "[ResourceServer] still cannot open: %s\n", file_path.c_str());
-            exec.resolve({
-                .data   = saucer::stash::from_str("Not Found"),
-                .mime   = "text/plain",
-                .headers = {{"Access-Control-Allow-Origin", "*"}},
-                .status = 404,
-            });
-            return;
-        }
-
-        auto file_size = file.tellg();
-        file.seekg(0);
-
-        std::fprintf(stderr, "[ResourceServer] serving file=%s size=%ld\n", file_path.c_str(), static_cast<long>(file_size));
-
-        // ── MIME from extension ───────────────────────────────────────────
-        auto ext = fs::path(file_path).extension().string();
-        // Normalize to lowercase
-        for (auto &c : ext) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-
-        std::string mime = "audio/mpeg";
-        if (ext == ".flac")      mime = "audio/flac";
-        else if (ext == ".wav")  mime = "audio/wav";
-        else if (ext == ".ogg" || ext == ".opus") mime = "audio/ogg";
-        else if (ext == ".m4a")  mime = "audio/mp4";
-
-        // ── Range support ─────────────────────────────────────────────────
-        // Check if the request has a Range header
-        auto headers = req.headers();
-        auto range_it = headers.find("Range");
-        std::size_t start = 0;
-        std::size_t end = static_cast<std::size_t>(file_size) - 1;
-        int status = 200;
-
-        if (range_it != headers.end())
-        {
-            std::fprintf(stderr, "[ResourceServer] Range header: %s\n", range_it->second.c_str());
-            // Parse "bytes=N-M" or "bytes=N-"
-            std::string_view rng = range_it->second;
-            if (rng.starts_with("bytes="))
+            rv.remove_prefix(6);
+            auto dash = rv.find('-');
+            if (dash != std::string_view::npos)
             {
-                rng.remove_prefix(6);
-                auto dash = rng.find('-');
-                if (dash != std::string_view::npos)
-                {
-                    auto start_str = rng.substr(0, dash);
-                    auto end_str   = rng.substr(dash + 1);
-                    if (!start_str.empty())
-                        start = static_cast<std::size_t>(std::stoll(std::string(start_str)));
-                    if (!end_str.empty())
-                        end = static_cast<std::size_t>(std::stoll(std::string(end_str)));
-                    // Clamp
-                    if (end >= static_cast<std::size_t>(file_size))
-                        end = static_cast<std::size_t>(file_size) - 1;
-                    status = 206; // Partial Content
-                }
+                auto start_str = rv.substr(0, dash);
+                auto end_str   = rv.substr(dash + 1);
+                if (!start_str.empty())
+                    range_start = static_cast<std::size_t>(std::stoll(std::string(start_str)));
+                if (!end_str.empty())
+                    range_end = static_cast<std::size_t>(std::stoll(std::string(end_str)));
+                if (range_end >= file_size)
+                    range_end = file_size - 1;
+                has_range = true;
             }
         }
-
-        // ── read chunk ────────────────────────────────────────────────────
-        auto chunk_size = end - start + 1;
-        std::string data(chunk_size, '\0');
-        file.seekg(static_cast<std::ifstream::pos_type>(start));
-        file.read(data.data(), static_cast<std::streamsize>(chunk_size));
-
-        // Build Content-Range header for 206
-        std::map<std::string, std::string> resp_headers = {
-            {"Access-Control-Allow-Origin", "*"},
-            {"Content-Range", "bytes " + std::to_string(start) + "-" + std::to_string(end) + "/" + std::to_string(static_cast<long long>(file_size))},
-        };
-
-        exec.resolve({
-            .data   = saucer::stash::from_str(std::move(data)),
-            .mime   = std::move(mime),
-            .headers = std::move(resp_headers),
-            .status = status,
-        });
-    });
-}
-
-std::string ResourceServer::percent_decode(std::string_view s)
-{
-    std::string out;
-    out.reserve(s.size());
-    for (std::size_t i = 0; i < s.size(); ++i)
-    {
-        if (s[i] == '%' && i + 2 < s.size())
-        {
-            int hi = 0, lo = 0;
-            std::from_chars(&s[i + 1], &s[i + 2], hi, 16);
-            std::from_chars(&s[i + 2], &s[i + 3], lo, 16);
-            out += static_cast<char>((hi << 4) | lo);
-            i += 2;
-        }
-        else if (s[i] == '+')
-            out += ' ';
-        else
-            out += s[i];
     }
-    return out;
+
+    auto chunk_size = range_end - range_start + 1;
+
+    // ── read chunk ───────────────────────────────────────────────────
+    file.seekg(static_cast<std::ifstream::pos_type>(range_start));
+    auto *buf = static_cast<char *>(g_malloc(chunk_size));
+    file.read(buf, static_cast<std::streamsize>(chunk_size));
+
+    // ── build response ───────────────────────────────────────────────
+    auto *headers = soup_server_message_get_response_headers(msg);
+
+    soup_message_headers_append(headers, "Access-Control-Allow-Origin", "*");
+    soup_message_headers_append(headers, "Accept-Ranges", "bytes");
+
+    if (has_range)
+    {
+        auto cr = "bytes " + std::to_string(range_start) + "-"
+                  + std::to_string(range_end) + "/"
+                  + std::to_string(file_size);
+        soup_message_headers_append(headers, "Content-Range", cr.c_str());
+        soup_server_message_set_status(msg, SOUP_STATUS_PARTIAL_CONTENT, nullptr);
+    }
+    else
+    {
+        soup_server_message_set_status(msg, SOUP_STATUS_OK, nullptr);
+    }
+
+    // Set response body (SOUP_MEMORY_TAKE = libsoup will g_free)
+    soup_server_message_set_response(msg, mime.c_str(),
+                                     SOUP_MEMORY_TAKE, buf, chunk_size);
+
+    std::fprintf(stderr, "[ResourceServer] -> %d, %zu bytes [%zu..%zu/%zu]\n",
+                 has_range ? 206 : 200, chunk_size, range_start, range_end, file_size);
 }

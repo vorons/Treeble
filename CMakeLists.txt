@@ -19,6 +19,7 @@ FetchContent_MakeAvailable(saucer)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(TAGLIB taglib REQUIRED IMPORTED_TARGET)
 pkg_check_modules(GIO gio-unix-2.0 REQUIRED IMPORTED_TARGET)
+pkg_check_modules(LIBSOUP libsoup-3.0 REQUIRED IMPORTED_TARGET)
 
 # ── Frontend build (Vite) ──────────────────────────────────────────────────
 set(FRONTEND_DIR "${CMAKE_SOURCE_DIR}/frontend")
@@ -53,6 +54,10 @@ add_executable(treeble ${SOURCES})
 
 target_include_directories(treeble PRIVATE src)
 
+# libsoup-3.0 include dirs (PkgConfig::LIBSOUP doesn't always auto-add)
+target_include_directories(treeble PRIVATE ${LIBSOUP_INCLUDE_DIRS})
+target_link_directories(treeble PRIVATE ${LIBSOUP_LIBRARY_DIRS})
+
 # ── Embed frontend assets (after target exists) ─────────────────────────────
 saucer_embed("${FRONTEND_DIST}" TARGET treeble)
 
@@ -61,6 +66,7 @@ target_link_libraries(treeble PRIVATE
   saucer::embedded
   PkgConfig::TAGLIB
   PkgConfig::GIO
+  PkgConfig::LIBSOUP
 )
 
 target_compile_features(treeble PRIVATE cxx_std_23)
