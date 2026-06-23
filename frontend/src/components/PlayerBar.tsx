@@ -131,7 +131,7 @@ export default function PlayerBar() {
           </div>
         )}
         <span className="text-xs text-muted-foreground w-8 tabular-nums shrink-0">
-          {fmtTime(duration)}
+          -{fmtTime(Math.max(0, duration - positionSec))}
         </span>
       </div>
 
