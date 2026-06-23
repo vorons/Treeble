@@ -55,7 +55,7 @@ export default function TrackList() {
   };
 
   return (
-    <div className="h-full overflow-y-auto">
+    <div className="h-full overflow-y-auto divide-y divide-border">
       {folderTracks.length === 0 && (
         <div className="p-4 text-sm text-muted-foreground">
           No audio files in this folder.
