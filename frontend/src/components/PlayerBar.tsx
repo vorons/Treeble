@@ -112,7 +112,7 @@ export default function PlayerBar() {
           onClick={handleProgressClick}
         >
           <div
-            className="h-full bg-primary rounded-full transition-[width] duration-200"
+            className="h-full bg-primary rounded-full transition-[width] duration-100"
             style={{ width: `${progressPct}%` }}
           />
         </div>
