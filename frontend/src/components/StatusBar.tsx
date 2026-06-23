@@ -1,6 +1,13 @@
 import { useCallback } from "react";
 import { usePlayerStore } from "@/stores/playerStore";
-import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { ArrowUpDown, ArrowUp, ArrowDown, Check } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 
 export default function StatusBar() {
@@ -24,19 +31,18 @@ export default function StatusBar() {
   const toggleSort = useCallback(
     (field: "title" | "duration") => {
       if (sortField === field) {
-        // Toggle direction
         setSort(field, sortDir === "asc" ? "desc" : "asc");
       } else {
-        // Set new field, default ascending
         setSort(field, "asc");
       }
     },
     [sortField, sortDir, setSort],
   );
 
-  const clearSort = useCallback(() => {
-    setSort(null, "asc");
-  }, [setSort]);
+  const items = [
+    { field: "title" as const, label: "Name" },
+    { field: "duration" as const, label: "Duration" },
+  ];
 
   return (
     <div className="flex items-center justify-between border-t border-border bg-black/20 px-4 py-1 text-xs text-muted-foreground shrink-0">
@@ -49,57 +55,53 @@ export default function StatusBar() {
               ? "Playing"
               : "No folder selected"}
       </span>
+      <span className="truncate ml-4 text-right max-w-48">
+        {currentTrack ? currentTrack.title : "\u00a0"}
+      </span>
 
-      <div className="flex items-center gap-3 shrink-0 ml-4">
-        {/* Sort toggles */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => toggleSort("title")}
-            className={cn(
-              "flex items-center gap-0.5 hover:text-foreground transition-colors",
-              sortField === "title" && "text-primary font-medium",
-            )}
+      {/* Sort popover */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className={cn("size-6 shrink-0 ml-2", sortField && "text-primary")}
           >
-            Name
-            {sortField === "title" ? (
+            {sortField ? (
               sortDir === "asc" ? (
-                <ArrowUp className="size-3" />
+                <ArrowUp className="size-3.5" />
               ) : (
-                <ArrowDown className="size-3" />
+                <ArrowDown className="size-3.5" />
               )
-            ) : null}
-          </button>
-          <button
-            onClick={() => toggleSort("duration")}
-            className={cn(
-              "flex items-center gap-0.5 hover:text-foreground transition-colors",
-              sortField === "duration" && "text-primary font-medium",
+            ) : (
+              <ArrowUpDown className="size-3.5" />
             )}
-          >
-            Duration
-            {sortField === "duration" ? (
-              sortDir === "asc" ? (
-                <ArrowUp className="size-3" />
-              ) : (
-                <ArrowDown className="size-3" />
-              )
-            ) : null}
-          </button>
-          {sortField && (
-            <button
-              onClick={clearSort}
-              className="hover:text-foreground transition-colors"
-              title="Clear sort"
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent side="top" align="end" className="min-w-28">
+          {items.map(({ field, label }) => (
+            <DropdownMenuItem
+              key={field}
+              onClick={() => toggleSort(field)}
+              className="flex items-center justify-between gap-3"
             >
-              <ArrowUpDown className="size-3" />
-            </button>
-          )}
-        </div>
-
-        <span className="truncate text-right max-w-48">
-          {currentTrack ? currentTrack.title : "\u00a0"}
-        </span>
-      </div>
+              <span>{label}</span>
+              <span className="flex items-center gap-1">
+                {sortField === field && (
+                  <>
+                    <Check className="size-3 text-primary" />
+                    {sortDir === "asc" ? (
+                      <ArrowUp className="size-3 text-primary" />
+                    ) : (
+                      <ArrowDown className="size-3 text-primary" />
+                    )}
+                  </>
+                )}
+              </span>
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }
