@@ -1,0 +1,18 @@
+{
+  "id": "f_20260623202035_0786",
+  "feature": "frontend:player-store",
+  "title": "Double-advance on track end when sorting is active — skips every other track",
+  "severity": "high",
+  "status": "fixed",
+  "path": "frontend/src/stores/playerStore.ts",
+  "evidence": "onAudioEvent(\"ended\"): backend auto-advances in IPCHandler::audioEvent(\"ended\"), then the frontend computes the next sorted track and calls playInFolder() again — advancing a second time.",
+  "suggestion": "Pick one owner for auto-advance: either disable the backend's auto-advance when sorting is active (check a flag), or let the frontend handle it exclusively and remove the auto-advance from IPCHandler::audioEvent when sorting is active. The sort-branch in onAudioEvent should NOT also call playInFolder — it should just sync state after the backend already advanced.",
+  "created_at": "2026-06-23T20:20:35.969273721Z",
+  "updated_at": "2026-06-23T20:26:25.712938556Z",
+  "notes": [
+    {
+      "at": "2026-06-23T20:26:25.712938656Z",
+      "text": "Removed backend auto-advance from IPCHandler::audioEvent(\"ended\"), frontend now handles all navigation. Unsorted path uses play(nextIdx) instead of getState()."
+    }
+  ]
+}

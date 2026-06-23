@@ -1,0 +1,18 @@
+{
+  "id": "f_20260623202035_7295",
+  "feature": "cpp:tray",
+  "title": "Icon written to disk on every startup — unnecessary I/O",
+  "severity": "low",
+  "status": "fixed",
+  "path": "src/tray/SystemTray.cpp:303-312",
+  "evidence": "g_file_set_contents(icon_file.c_str(), reinterpret_cast\u003cconst char *\u003e(s_tray_icon_data), s_tray_icon_size, nullptr); — called unconditionally on every app start.",
+  "suggestion": "Check if the file exists and has the correct size first. Or write a stamp file. Avoids unnecessary disk writes on every launch.",
+  "created_at": "2026-06-23T20:20:35.97069994Z",
+  "updated_at": "2026-06-23T20:26:25.714297727Z",
+  "notes": [
+    {
+      "at": "2026-06-23T20:26:25.714297827Z",
+      "text": "Added g_file_test check before writing icon; skips write if file exists"
+    }
+  ]
+}

@@ -65,7 +65,6 @@ set(SOURCES
   src/metadata/TagReader.cpp
   src/audio/WebViewAudioBackend.cpp
   src/web/ResourceServer.cpp
-  src/mpris/MPRIS2.cpp
   src/tray/SystemTray.cpp
 )
 

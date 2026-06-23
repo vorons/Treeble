@@ -37,9 +37,9 @@ bool ResourceServer::start()
     if (!server)
         return false;
 
-    // Listen on all interfaces, random port
+    // Listen on localhost only, random port
     GError *error = nullptr;
-    if (!soup_server_listen_all(server, 0, static_cast<SoupServerListenOptions>(0), &error))
+    if (!soup_server_listen_local(server, 0, static_cast<SoupServerListenOptions>(0), &error))
     {
         std::fprintf(stderr, "[ResourceServer] failed to listen: %s\n", error->message);
         g_error_free(error);
@@ -119,6 +119,19 @@ void ResourceServer::on_request(_SoupServer * /*server*/,
     g_free(decoded);
 
     std::fprintf(stderr, "[ResourceServer] GET %s -> %s\n", path, file_path.c_str());
+
+    // ── reject path traversal ───────────────────────────────────────────
+    // Only absolute paths (starting with /) are valid; reject any containing ..
+    if (file_path.empty() || file_path[0] != '/' ||
+        file_path.find("/../") != std::string::npos ||
+        file_path.rfind("/..", 0) == 0 || file_path == "..")
+    {
+        std::fprintf(stderr, "[ResourceServer] path traversal rejected: %s\n", file_path.c_str());
+        soup_server_message_set_status(msg, SOUP_STATUS_FORBIDDEN, nullptr);
+        auto *headers = soup_server_message_get_response_headers(msg);
+        soup_message_headers_append(headers, "Access-Control-Allow-Origin", "*");
+        return;
+    }
 
     // ── open file ─────────────────────────────────────────────────────
     std::ifstream file(file_path, std::ios::binary | std::ios::ate);

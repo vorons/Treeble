@@ -1,0 +1,18 @@
+{
+  "id": "f_20260623202035_4891",
+  "feature": "cpp:web/resource-server",
+  "title": "ResourceServer listens on all interfaces (0.0.0.0) — local network audio exposure",
+  "severity": "high",
+  "status": "fixed",
+  "path": "src/web/ResourceServer.cpp:42",
+  "evidence": "soup_server_listen_all(server, 0, static_cast\u003cSoupServerListenOptions\u003e(0), \u0026error)",
+  "suggestion": "Replace soup_server_listen_all with soup_server_listen_local to bind only to 127.0.0.1. No reason a local audio player needs to serve audio to the LAN.",
+  "created_at": "2026-06-23T20:20:35.967833636Z",
+  "updated_at": "2026-06-23T20:26:25.711316958Z",
+  "notes": [
+    {
+      "at": "2026-06-23T20:26:25.711317118Z",
+      "text": "soup_server_listen_all → soup_server_listen_local (127.0.0.1 only)"
+    }
+  ]
+}

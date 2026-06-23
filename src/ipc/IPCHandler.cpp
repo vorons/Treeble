@@ -3,14 +3,10 @@
 #include "fs/FileScanner.h"
 #include "metadata/TagReader.h"
 #include "audio/WebViewAudioBackend.h"
-#include "mpris/MPRIS2.h"
 
 #include <saucer/smartview.hpp>
 #include <algorithm>
 #include <cstdio>
-#include <mutex>
-
-static std::mutex s_state_mtx; // ponytail: single lock, per-command if contention
 
 // ── helpers ─────────────────────────────────────────────────────────────────
 static Track make_track(const std::string &path, TagReader &tr)
@@ -49,8 +45,8 @@ static TrackView to_view(const Track &t)
 
 // ── constructor ─────────────────────────────────────────────────────────────
 IPCHandler::IPCHandler(saucer::smartview &wv, FileScanner &fs, TagReader &tr,
-                       WebViewAudioBackend &ab, MPRIS2 &mpris, PlayerState &state)
-    : m_wv(wv), m_fs(fs), m_tr(tr), m_ab(ab), m_mpris(mpris), m_state(state)
+                       WebViewAudioBackend &ab, PlayerState &state)
+    : m_wv(wv), m_fs(fs), m_tr(tr), m_ab(ab), m_state(state)
 {
     // ── tree (folder list) ────────────────────────────────────────────────
     // Returns the folder tree. Frontend calls this once at startup.
@@ -81,7 +77,6 @@ IPCHandler::IPCHandler(saucer::smartview &wv, FileScanner &fs, TagReader &tr,
     // The old `play(index)` is kept for backward compat but no longer called from frontend.
     wv.expose("playInFolder", [this](const std::string &dir, int index)
     {
-        std::lock_guard lk(s_state_mtx);
         auto files = m_fs.list_audio(dir);
         m_state.queue.clear();
         m_state.queue.reserve(files.size());
@@ -98,12 +93,10 @@ IPCHandler::IPCHandler(saucer::smartview &wv, FileScanner &fs, TagReader &tr,
         std::fprintf(stderr, "[IPC] playInFolder: idx=%zu title=%s path=%s\n", m_state.current_index, t.title.c_str(), t.path.c_str());
         m_ab.load(t.path);
         m_ab.play();
-        m_mpris.update(m_state);
     });
 
     wv.expose("play", [this](int index)
     {
-        std::lock_guard lk(s_state_mtx);
         std::fprintf(stderr, "[IPC] play index=%d, queue.size=%zu\n", index, m_state.queue.size());
         if (index < 0 || static_cast<std::size_t>(index) >= m_state.queue.size())
         {
@@ -117,49 +110,40 @@ IPCHandler::IPCHandler(saucer::smartview &wv, FileScanner &fs, TagReader &tr,
         std::fprintf(stderr, "[IPC] play: idx=%zu title=%s dur=%lu path=%s\n", m_state.current_index, t.title.c_str(), static_cast<unsigned long>(t.duration_sec), t.path.c_str());
         m_ab.load(t.path);
         m_ab.play();
-        m_mpris.update(m_state);
     });
 
     wv.expose("pause", [this]()
     {
-        std::lock_guard lk(s_state_mtx);
         m_ab.pause();
         m_state.paused = true;
-        m_mpris.update(m_state);
     });
 
     wv.expose("resume", [this]()
     {
-        std::lock_guard lk(s_state_mtx);
         m_ab.play();
         m_state.paused = false;
-        m_mpris.update(m_state);
     });
 
     wv.expose("next", [this]() -> int
     {
-        std::lock_guard lk(s_state_mtx);
         if (m_state.current_index + 1 < m_state.queue.size())
         {
             ++m_state.current_index;
             auto &t = m_state.queue[m_state.current_index];
             m_ab.load(t.path);
             m_ab.play();
-            m_mpris.update(m_state);
         }
         return static_cast<int>(m_state.current_index);
     });
 
     wv.expose("prev", [this]() -> int
     {
-        std::lock_guard lk(s_state_mtx);
         if (m_state.current_index > 0)
         {
             --m_state.current_index;
             auto &t = m_state.queue[m_state.current_index];
             m_ab.load(t.path);
             m_ab.play();
-            m_mpris.update(m_state);
         }
         return static_cast<int>(m_state.current_index);
     });
@@ -178,7 +162,6 @@ IPCHandler::IPCHandler(saucer::smartview &wv, FileScanner &fs, TagReader &tr,
     // ── full state snapshot ───────────────────────────────────────────────
     wv.expose("getState", [this]() -> PlayerStateView
     {
-        std::lock_guard lk(s_state_mtx);
         PlayerStateView out;
         out.currentIndex = m_state.current_index;
         out.playing = m_state.playing;
@@ -197,20 +180,7 @@ IPCHandler::IPCHandler(saucer::smartview &wv, FileScanner &fs, TagReader &tr,
         std::fprintf(stderr, "[audioEvent] type=%s pos=%.2f dur=%.2f\n", type.c_str(), position, duration);
         m_ab.on_event(type, position, duration);
 
-        if (type == "ended")
-        {
-            // Auto-advance to next track
-            std::lock_guard lk(s_state_mtx);
-            if (m_state.current_index + 1 < m_state.queue.size())
-            {
-                ++m_state.current_index;
-                auto &t = m_state.queue[m_state.current_index];
-                m_ab.load(t.path);
-                m_ab.play();
-                m_mpris.update(m_state);
-            }
-        }
-        else if (type == "error")
+        if (type == "error")
         {
             std::fprintf(stderr, "Audio error on track index %zu\n", m_state.current_index);
         }

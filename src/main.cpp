@@ -4,7 +4,6 @@
 #include "audio/WebViewAudioBackend.h"
 #include "ipc/IPCHandler.h"
 #include "web/ResourceServer.h"
-#include "mpris/MPRIS2.h"
 #include "tray/SystemTray.h"
 
 #include <saucer/smartview.hpp>
@@ -86,9 +85,8 @@ coco::stray start(saucer::application *app)
     TagReader         tag_reader;
     PlayerState       state;
     WebViewAudioBackend audio(*webview);
-    MPRIS2            mpris;
     // ResourceServer already owns the HTTP server; register with IPC
-    IPCHandler        ipc(*webview, scanner, tag_reader, audio, mpris, state);
+    IPCHandler        ipc(*webview, scanner, tag_reader, audio, state);
 
     // ── system tray icon ─────────────────────────────────────────────────
     SystemTray        tray(app, *window);

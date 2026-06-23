@@ -481,9 +481,15 @@ static std::string write_icon()
     auto icon_file = icon_dir + "/hicolor/22x22/status/treeble.png";
 
     g_mkdir_with_parents((icon_dir + "/hicolor/22x22/status").c_str(), 0755);
-    g_file_set_contents(icon_file.c_str(),
-                         reinterpret_cast<const char *>(s_tray_icon_data),
-                         s_tray_icon_size, nullptr);
+
+    // Skip write if the file already exists
+    if (!g_file_test(icon_file.c_str(), G_FILE_TEST_EXISTS))
+    {
+        g_file_set_contents(icon_file.c_str(),
+                             reinterpret_cast<const char *>(s_tray_icon_data),
+                             s_tray_icon_size, nullptr);
+    }
+
     return icon_dir;
 }
 

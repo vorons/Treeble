@@ -1,0 +1,18 @@
+{
+  "id": "f_20260623202035_8662",
+  "feature": "frontend:assets",
+  "title": "App.css contains unused saucer boilerplate — dead code embedded in binary",
+  "severity": "low",
+  "status": "fixed",
+  "path": "frontend/src/App.css",
+  "evidence": "File contains .counter, .hero, #center, #next-steps, etc. — none of these selectors are used in any component. main.tsx only imports index.css.",
+  "suggestion": "Delete frontend/src/App.css — it's from the saucer template and no component references it.",
+  "created_at": "2026-06-23T20:20:35.970383922Z",
+  "updated_at": "2026-06-23T20:26:25.713972291Z",
+  "notes": [
+    {
+      "at": "2026-06-23T20:26:25.713972392Z",
+      "text": "Deleted frontend/src/App.css (unused saucer boilerplate)"
+    }
+  ]
+}

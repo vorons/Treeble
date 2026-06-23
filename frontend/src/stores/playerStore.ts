@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { getTree, getTracks, getState, playInFolder, pause, resume, nextTrack, prevTrack, seek, setVolume, audioEvent } from "@/lib/ipc";
+import { getTree, getTracks, getState, playInFolder, play, pause, resume, nextTrack, prevTrack, seek, setVolume, audioEvent } from "@/lib/ipc";
 import type { Track, FolderTree, PlayerState } from "@/lib/ipc";
 import { useToastStore } from "@/stores/toastStore";
 
@@ -188,9 +188,12 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
       if (type === "timeupdate") {
         set({ positionSec: pos });
       } else if (type === "ended") {
+        // Auto-advance is handled entirely by the frontend (backend does not
+        // advance on "ended"). This avoids the double-advance bug that
+        // occurred when the backend advanced and the frontend advanced again.
         const { sortField, sortDir, currentQueueFolder, folderTracks, queue, currentIndex } = get();
         if (sortField && currentQueueFolder) {
-          // Navigate in sorted order instead of backend auto-advance
+          // Navigate in sorted order
           const sorted = [...folderTracks].sort((a, b) => {
             const aV = sortField === 'title' ? a.title : a.durationSec;
             const bV = sortField === 'title' ? b.title : b.durationSec;
@@ -208,9 +211,14 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
             set({ playing: false, positionSec: 0 });
           }
         } else {
-          // Backend auto-advances; sync full state
-          const st = await getState();
-          set({ currentIndex: st.currentIndex, positionSec: 0, playing: st.playing, paused: st.paused, queue: st.queue });
+          // Queue order: advance by one if there's a next track
+          if (currentIndex + 1 < queue.length) {
+            const nextIdx = currentIndex + 1;
+            await play(nextIdx);
+            set({ currentIndex: nextIdx, positionSec: 0 });
+          } else {
+            set({ playing: false, positionSec: 0 });
+          }
         }
       }
     } catch (e) {
