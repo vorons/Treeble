@@ -61,29 +61,46 @@ IPCHandler::IPCHandler(saucer::smartview &wv, FileScanner &fs, TagReader &tr,
     });
 
     // ── tracks in a folder ────────────────────────────────────────────────
+    // ponytail: purely a query — does NOT touch m_state.queue.
+    // The queue is only set when the user explicitly plays a track.
     wv.expose("getTracks", [this](const std::string &dir) -> std::vector<TrackView>
     {
         auto files = m_fs.list_audio(dir);
         std::vector<TrackView> out;
         out.reserve(files.size());
-        {
-            std::lock_guard lk(s_state_mtx);
-            m_state.queue.clear();
-            m_state.current_index = 0;
-        }
         for (auto &f : files)
         {
             auto t = make_track(f, m_tr);
-            {
-                std::lock_guard lk(s_state_mtx);
-                m_state.queue.push_back(t);
-            }
             out.push_back(to_view(t));
         }
         return out;
     });
 
     // ── playback controls ─────────────────────────────────────────────────
+    // ponytail: playInFolder is the main entry — sets queue from folder, then plays.
+    // The old `play(index)` is kept for backward compat but no longer called from frontend.
+    wv.expose("playInFolder", [this](const std::string &dir, int index)
+    {
+        std::lock_guard lk(s_state_mtx);
+        auto files = m_fs.list_audio(dir);
+        m_state.queue.clear();
+        m_state.queue.reserve(files.size());
+        for (auto &f : files)
+            m_state.queue.push_back(make_track(f, m_tr));
+
+        if (index < 0 || static_cast<std::size_t>(index) >= m_state.queue.size())
+            return;
+
+        m_state.current_index = static_cast<std::size_t>(index);
+        m_state.playing = true;
+        m_state.paused = false;
+        auto &t = m_state.queue[m_state.current_index];
+        std::fprintf(stderr, "[IPC] playInFolder: idx=%zu title=%s path=%s\n", m_state.current_index, t.title.c_str(), t.path.c_str());
+        m_ab.load(t.path);
+        m_ab.play();
+        m_mpris.update(m_state);
+    });
+
     wv.expose("play", [this](int index)
     {
         std::lock_guard lk(s_state_mtx);

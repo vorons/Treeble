@@ -16,6 +16,7 @@ export default function TrackList() {
   const playing = usePlayerStore((s) => s.playing);
   const paused = usePlayerStore((s) => s.paused);
   const currentFolder = usePlayerStore((s) => s.currentFolder);
+  const currentQueueFolder = usePlayerStore((s) => s.currentQueueFolder);
   const selectFolder = usePlayerStore((s) => s.selectFolder);
   const playTrack = usePlayerStore((s) => s.playTrack);
   const togglePause = usePlayerStore((s) => s.togglePause);
@@ -35,8 +36,9 @@ export default function TrackList() {
   }
 
   const isCurrentTrack = (idx: number) => {
-    // ponytail: simple offset check; works when tracks are loaded sequentially
-    return idx === currentIndex && queue.length > 0;
+    // Only highlight if the visible folder is the same as the queue's folder
+    if (queue.length === 0 || currentFolder !== currentQueueFolder) return false;
+    return idx === currentIndex;
   };
 
   return (

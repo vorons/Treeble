@@ -58,6 +58,10 @@ export function getTracks(dir: string): Promise<Track[]> {
   return call("getTracks", dir) as Promise<Track[]>;
 }
 
+export function playInFolder(dir: string, index: number): Promise<void> {
+  return call("playInFolder", dir, index) as Promise<void>;
+}
+
 export function play(index: number): Promise<void> {
   return call("play", index) as Promise<void>;
 }

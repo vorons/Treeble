@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { getTree, getTracks, getState, play, pause, resume, nextTrack, prevTrack, seek, setVolume, audioEvent } from "@/lib/ipc";
+import { getTree, getTracks, getState, playInFolder, pause, resume, nextTrack, prevTrack, seek, setVolume, audioEvent } from "@/lib/ipc";
 import type { Track, FolderTree, PlayerState } from "@/lib/ipc";
 
 interface PlayerStore extends PlayerState {
@@ -9,6 +9,8 @@ interface PlayerStore extends PlayerState {
   folderTracks: Track[];
   /** Currently selected folder path */
   currentFolder: string | null;
+  /** Which folder the playback queue belongs to (null = none) */
+  currentQueueFolder: string | null;
 
   // ── Actions ──
   init: () => Promise<void>;
@@ -32,6 +34,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
   tree: null,
   folderTracks: [],
   currentFolder: null,
+  currentQueueFolder: null,
 
   init: async () => {
     const [tree] = await Promise.all([getTree()]);
@@ -39,14 +42,24 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
   },
 
   selectFolder: async (dir: string) => {
+    // ponytail: only updates the *display* — does NOT change the playback queue.
+    // The queue stays pinned to the folder of the currently playing track.
     const tracks = await getTracks(dir);
-    set({ currentFolder: dir, folderTracks: tracks, queue: tracks, currentIndex: 0, positionSec: 0 });
+    set({ currentFolder: dir, folderTracks: tracks });
   },
 
   playTrack: async (index: number) => {
-    // ponytail: queue is reset on folder select, so local index == global index
-    await play(index);
-    set({ playing: true, paused: false, currentIndex: index, positionSec: 0 });
+    const { currentFolder } = get();
+    if (!currentFolder) return;
+    // Sets the backend queue to currentFolder's tracks and plays at index.
+    await playInFolder(currentFolder, index);
+    set({
+      playing: true,
+      paused: false,
+      currentIndex: index,
+      positionSec: 0,
+      currentQueueFolder: currentFolder,
+    });
   },
 
   togglePause: async () => {
