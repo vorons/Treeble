@@ -73,6 +73,7 @@ coco::stray start(saucer::application *app)
     window->set_title("Treeble");
     window->set_size({.w = 960, .h = 640});
     window->set_min_size({.w = 640, .h = 400});
+    window->set_decorations(saucer::window::decoration::none);
 
     // ── services ──────────────────────────────────────────────────────────
     auto root = music_dir();

@@ -216,6 +216,30 @@ IPCHandler::IPCHandler(saucer::smartview &wv, FileScanner &fs, TagReader &tr,
         }
     });
 
+    // ── window controls (custom title bar) ───────────────────────────────
+    wv.expose("windowMinimize", [this]()
+    {
+        m_wv.parent().set_minimized(true);
+    });
+
+    wv.expose("windowMaximizeRestore", [this]() -> bool
+    {
+        auto &win = m_wv.parent();
+        bool next = !win.maximized();
+        win.set_maximized(next);
+        return next;
+    });
+
+    wv.expose("windowClose", [this]()
+    {
+        m_wv.parent().close();
+    });
+
+    wv.expose("windowStartDrag", [this]()
+    {
+        m_wv.parent().start_drag();
+    });
+
     // ── home directory ────────────────────────────────────────────────────
     wv.expose("getHome", [this]() -> std::string
     {

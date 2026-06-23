@@ -101,3 +101,21 @@ export function audioEvent(
 ): Promise<void> {
   return call("audioEvent", type, position, duration) as Promise<void>;
 }
+
+// ── Window controls (custom title bar) ─────────────────────────────────────
+
+export function windowMinimize(): Promise<void> {
+  return call("windowMinimize") as Promise<void>;
+}
+
+export function windowMaximizeRestore(): Promise<boolean> {
+  return call("windowMaximizeRestore") as Promise<boolean>;
+}
+
+export function windowClose(): Promise<void> {
+  return call("windowClose") as Promise<void>;
+}
+
+export function windowStartDrag(): Promise<void> {
+  return call("windowStartDrag") as Promise<void>;
+}

@@ -1,5 +1,6 @@
 import { useRef, useEffect } from "react";
 import { usePlayerStore } from "@/stores/playerStore";
+import TitleBar from "@/components/TitleBar";
 import FileTree from "@/components/FileTree";
 import TrackList from "@/components/TrackList";
 import PlayerBar from "@/components/PlayerBar";
@@ -71,6 +72,9 @@ export default function App() {
   return (
     <div className="flex flex-col h-dvh">
       <audio ref={audioRef} preload="auto" />
+
+      {/* Custom title bar */}
+      <TitleBar />
 
       {/* Top bar: controls, progress, volume */}
       <PlayerBar />
