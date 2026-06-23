@@ -3,6 +3,7 @@ import { usePlayerStore } from "@/stores/playerStore";
 import FileTree from "@/components/FileTree";
 import TrackList from "@/components/TrackList";
 import PlayerBar from "@/components/PlayerBar";
+import StatusBar from "@/components/StatusBar";
 
 export default function App() {
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -59,24 +60,24 @@ export default function App() {
 
   return (
     <div className="flex flex-col h-dvh">
-      {/* Hidden audio element for playback */}
       <audio ref={audioRef} preload="auto" />
 
-      {/* Main area: sidebar + content */}
+      {/* Top bar: controls, progress, volume */}
+      <PlayerBar />
+
+      {/* Main area: sidebar + tracks */}
       <div className="flex flex-1 min-h-0">
-        {/* Sidebar */}
         <aside className="w-56 shrink-0 border-r border-border overflow-hidden">
           <FileTree />
         </aside>
 
-        {/* Track list */}
         <main className="flex-1 overflow-hidden">
           <TrackList />
         </main>
       </div>
 
-      {/* Bottom bar */}
-      <PlayerBar />
+      {/* Bottom status bar */}
+      <StatusBar />
     </div>
   );
 }

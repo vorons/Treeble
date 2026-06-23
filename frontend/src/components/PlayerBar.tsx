@@ -1,6 +1,5 @@
 import { useRef, useCallback, useState } from "react";
 import { usePlayerStore } from "@/stores/playerStore";
-import { cn } from "@/lib/utils";
 import {
   SkipBack,
   SkipForward,
@@ -29,7 +28,7 @@ export default function PlayerBar() {
   const seekTo = usePlayerStore((s) => s.seekTo);
   const changeVolume = usePlayerStore((s) => s.changeVolume);
 
-  const [volume, setVolumeState] = useState(0.7);
+  const [vol, setVol] = useState(0.7);
   const [muted, setMuted] = useState(false);
   const progressRef = useRef<HTMLDivElement>(null);
 
@@ -47,59 +46,44 @@ export default function PlayerBar() {
     [duration, seekTo],
   );
 
-  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleVolume = (e: React.ChangeEvent<HTMLInputElement>) => {
     const v = parseFloat(e.target.value);
-    setVolumeState(v);
+    setVol(v);
     changeVolume(muted ? 0 : v);
   };
 
   const toggleMute = () => {
     setMuted(!muted);
-    changeVolume(muted ? volume : 0);
+    changeVolume(muted ? vol : 0);
   };
 
   return (
-    <div className="flex items-center gap-3 border-t border-border bg-black/40 px-4 py-2">
-      {/* Track info */}
-      <div className="min-w-0 flex-1 max-w-[200px]">
-        <div className="truncate text-sm font-medium">
-          {currentTrack?.title ?? "No track"}
-        </div>
-        {currentTrack?.artist && (
-          <div className="truncate text-xs text-muted-foreground">
-            {currentTrack.artist}
-          </div>
-        )}
-      </div>
-
+    <div className="flex items-center gap-3 border-b border-border bg-black/30 px-4 py-2 shrink-0">
       {/* Controls */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1">
         <button onClick={prev} className="p-1 hover:text-primary transition-colors">
           <SkipBack className="size-4" />
         </button>
-
         <button
           onClick={togglePause}
-          className="flex items-center justify-center size-8 rounded-full bg-primary text-primary-foreground hover:brightness-110 transition-all"
+          className="flex items-center justify-center size-7 rounded-full bg-primary text-primary-foreground hover:brightness-110 transition-all"
         >
           {playing && !paused ? (
-            <Pause className="size-4" />
+            <Pause className="size-3.5" />
           ) : (
-            <Play className="size-4 ml-0.5" />
+            <Play className="size-3.5 ml-0.5" />
           )}
         </button>
-
         <button onClick={next} className="p-1 hover:text-primary transition-colors">
           <SkipForward className="size-4" />
         </button>
       </div>
 
       {/* Progress bar */}
-      <div className="flex-1 flex items-center gap-2">
-        <span className="text-xs text-muted-foreground w-10 text-right">
+      <div className="flex-1 flex items-center gap-2 min-w-0">
+        <span className="text-xs text-muted-foreground w-8 text-right tabular-nums shrink-0">
           {fmtTime(positionSec)}
         </span>
-
         <div
           ref={progressRef}
           className="flex-1 h-1.5 bg-muted rounded-full cursor-pointer group"
@@ -110,29 +94,24 @@ export default function PlayerBar() {
             style={{ width: `${progressPct}%` }}
           />
         </div>
-
-        <span className="text-xs text-muted-foreground w-10">
+        <span className="text-xs text-muted-foreground w-8 tabular-nums shrink-0">
           {fmtTime(duration)}
         </span>
       </div>
 
       {/* Volume */}
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1 shrink-0">
         <button onClick={toggleMute} className="p-1 hover:text-primary transition-colors">
-          {muted || volume === 0 ? (
-            <VolumeX className="size-4" />
-          ) : (
-            <Volume2 className="size-4" />
-          )}
+          {muted || vol === 0 ? <VolumeX className="size-4" /> : <Volume2 className="size-4" />}
         </button>
         <input
           type="range"
           min="0"
           max="1"
           step="0.01"
-          value={muted ? 0 : volume}
-          onChange={handleVolumeChange}
-          className="w-20 accent-primary"
+          value={muted ? 0 : vol}
+          onChange={handleVolume}
+          className="w-16 accent-primary"
         />
       </div>
     </div>

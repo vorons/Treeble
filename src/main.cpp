@@ -49,7 +49,7 @@ coco::stray start(saucer::application *app)
 
     // ── embedded frontend ─────────────────────────────────────────────────
     webview->embed(saucer::embedded::all());
-    webview->set_url("embedded://index.html");
+    webview->serve("/index.html");
 
     window->show();
 
