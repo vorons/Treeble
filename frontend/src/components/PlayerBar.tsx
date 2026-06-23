@@ -30,6 +30,7 @@ export default function PlayerBar() {
 
   const [vol, setVol] = useState(0.7);
   const [muted, setMuted] = useState(false);
+  const [hoverSec, setHoverSec] = useState<number | null>(null);
   const progressRef = useRef<HTMLDivElement>(null);
 
   const currentTrack = currentIndex < queue.length ? queue[currentIndex] : null;
@@ -45,6 +46,23 @@ export default function PlayerBar() {
     },
     [duration, seekTo],
   );
+
+  const handleProgressMove = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (!progressRef.current || duration === 0) {
+        setHoverSec(null);
+        return;
+      }
+      const rect = progressRef.current.getBoundingClientRect();
+      const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+      setHoverSec(pct * duration);
+    },
+    [duration],
+  );
+
+  const handleProgressLeave = useCallback(() => {
+    setHoverSec(null);
+  }, []);
 
   const handleVolume = (e: React.ChangeEvent<HTMLInputElement>) => {
     const v = parseFloat(e.target.value);
@@ -80,7 +98,11 @@ export default function PlayerBar() {
       </div>
 
       {/* Progress bar */}
-      <div className="flex-1 flex items-center gap-2 min-w-0">
+      <div
+        className="flex-1 flex items-center gap-2 min-w-0 relative"
+        onMouseMove={handleProgressMove}
+        onMouseLeave={handleProgressLeave}
+      >
         <span className="text-xs text-muted-foreground w-8 text-right tabular-nums shrink-0">
           {fmtTime(positionSec)}
         </span>
@@ -97,6 +119,16 @@ export default function PlayerBar() {
         <span className="text-xs text-muted-foreground w-8 tabular-nums shrink-0">
           {fmtTime(duration)}
         </span>
+
+        {/* Hover tooltip */}
+        {hoverSec !== null && (
+          <div
+            className="absolute -top-7 -translate-x-1/2 bg-background text-foreground text-xs px-1.5 py-0.5 rounded border border-border whitespace-nowrap pointer-events-none z-10"
+            style={{ left: `${(hoverSec / duration) * 100}%` }}
+          >
+            {fmtTime(hoverSec)}
+          </div>
+        )}
       </div>
 
       {/* Volume */}
