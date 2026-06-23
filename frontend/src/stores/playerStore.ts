@@ -83,13 +83,51 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
   },
 
   next: async () => {
-    const idx = await nextTrack();
-    set({ currentIndex: idx, positionSec: 0 });
+    const { sortField, sortDir, currentQueueFolder, folderTracks, queue, currentIndex } = get();
+    if (!currentQueueFolder) return;
+
+    if (sortField) {
+      const sorted = [...folderTracks].sort((a, b) => {
+        const aV = sortField === 'title' ? a.title : a.durationSec;
+        const bV = sortField === 'title' ? b.title : b.durationSec;
+        return aV < bV ? -1 : aV > bV ? 1 : 0;
+      });
+      const final = sortDir === 'desc' ? sorted.reverse() : sorted;
+      const cur = queue[currentIndex];
+      const pos = final.findIndex((t) => t.path === cur?.path);
+      if (pos < 0 || pos >= final.length - 1) return;
+      const next = final[pos + 1];
+      const origIdx = folderTracks.indexOf(next);
+      await playInFolder(currentQueueFolder, origIdx);
+      set({ currentIndex: origIdx, positionSec: 0 });
+    } else {
+      const idx = await nextTrack();
+      set({ currentIndex: idx, positionSec: 0 });
+    }
   },
 
   prev: async () => {
-    const idx = await prevTrack();
-    set({ currentIndex: idx, positionSec: 0 });
+    const { sortField, sortDir, currentQueueFolder, folderTracks, queue, currentIndex } = get();
+    if (!currentQueueFolder) return;
+
+    if (sortField) {
+      const sorted = [...folderTracks].sort((a, b) => {
+        const aV = sortField === 'title' ? a.title : a.durationSec;
+        const bV = sortField === 'title' ? b.title : b.durationSec;
+        return aV < bV ? -1 : aV > bV ? 1 : 0;
+      });
+      const final = sortDir === 'desc' ? sorted.reverse() : sorted;
+      const cur = queue[currentIndex];
+      const pos = final.findIndex((t) => t.path === cur?.path);
+      if (pos <= 0) return;
+      const prev = final[pos - 1];
+      const origIdx = folderTracks.indexOf(prev);
+      await playInFolder(currentQueueFolder, origIdx);
+      set({ currentIndex: origIdx, positionSec: 0 });
+    } else {
+      const idx = await prevTrack();
+      set({ currentIndex: idx, positionSec: 0 });
+    }
   },
 
   seekTo: async (sec: number) => {
@@ -108,9 +146,30 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
     if (type === "timeupdate") {
       set({ positionSec: pos });
     } else if (type === "ended") {
-      // Backend auto-advances; sync full state
-      const st = await getState();
-      set({ currentIndex: st.currentIndex, positionSec: 0, playing: st.playing, paused: st.paused, queue: st.queue });
+      const { sortField, sortDir, currentQueueFolder, folderTracks, queue, currentIndex } = get();
+      if (sortField && currentQueueFolder) {
+        // Navigate in sorted order instead of backend auto-advance
+        const sorted = [...folderTracks].sort((a, b) => {
+          const aV = sortField === 'title' ? a.title : a.durationSec;
+          const bV = sortField === 'title' ? b.title : b.durationSec;
+          return aV < bV ? -1 : aV > bV ? 1 : 0;
+        });
+        const final = sortDir === 'desc' ? sorted.reverse() : sorted;
+        const cur = queue[currentIndex];
+        const pos = final.findIndex((t) => t.path === cur?.path);
+        if (pos >= 0 && pos < final.length - 1) {
+          const next = final[pos + 1];
+          const origIdx = folderTracks.indexOf(next);
+          await playInFolder(currentQueueFolder, origIdx);
+          set({ currentIndex: origIdx, positionSec: 0, playing: true, paused: false });
+        } else {
+          set({ playing: false, positionSec: 0 });
+        }
+      } else {
+        // Backend auto-advances; sync full state
+        const st = await getState();
+        set({ currentIndex: st.currentIndex, positionSec: 0, playing: st.playing, paused: st.paused, queue: st.queue });
+      }
     }
   },
 }));
