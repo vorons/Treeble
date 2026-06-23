@@ -1,0 +1,24 @@
+#pragma once
+
+#include "Types.h"
+#include <string>
+#include <vector>
+
+class FileScanner
+{
+public:
+    explicit FileScanner(std::string root_dir);
+
+    /// Build full folder tree from root (fast, scans dirs only).
+    FolderTree scan_tree();
+
+    /// List audio files in a directory (lazy, reads on call).
+    std::vector<std::string> list_audio(const std::string &dir);
+
+private:
+    void scan_tree_recursive(FolderTree &node);
+    bool is_audio_ext(const std::string &ext) const;
+
+    std::string m_root;
+    static constexpr const char *s_extensions[] = {".mp3", ".flac", ".wav", ".ogg", ".m4a", ".opus", ".wma"};
+};

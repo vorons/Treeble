@@ -1,0 +1,6 @@
+build/
+frontend/dist/
+frontend/node_modules/
+*.appimage
+.DS_Store
+embedded/
