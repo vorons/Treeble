@@ -25,19 +25,36 @@ pkg_check_modules(LIBSOUP libsoup-3.0 REQUIRED IMPORTED_TARGET)
 set(FRONTEND_DIR "${CMAKE_SOURCE_DIR}/frontend")
 set(FRONTEND_DIST "${FRONTEND_DIR}/dist")
 
-if(NOT EXISTS "${FRONTEND_DIST}/index.html")
-  find_program(NPM npm REQUIRED)
+find_program(NPM npm REQUIRED)
+
+# Install JS dependencies (skipped if already present)
+if(NOT EXISTS "${FRONTEND_DIR}/node_modules")
   execute_process(
     COMMAND "${NPM}" install
     WORKING_DIRECTORY "${FRONTEND_DIR}"
-    OUTPUT_QUIET
-  )
-  execute_process(
-    COMMAND "${NPM}" run build
-    WORKING_DIRECTORY "${FRONTEND_DIR}"
-    OUTPUT_QUIET
   )
 endif()
+
+# Reconfigure cmake whenever frontend sources change,
+# so saucer_embed re-embeds the latest dist files
+set_property(
+  DIRECTORY APPEND
+  PROPERTY CMAKE_CONFIGURE_DEPENDS "${FRONTEND_DIR}/src"
+)
+
+# Build frontend at configure time (needed by saucer_embed below)
+execute_process(
+  COMMAND "${NPM}" run build
+  WORKING_DIRECTORY "${FRONTEND_DIR}"
+)
+
+# Also build frontend at build time when sources change
+add_custom_target(frontend ALL
+  COMMAND "${NPM}" run build
+  WORKING_DIRECTORY "${FRONTEND_DIR}"
+  BYPRODUCTS "${FRONTEND_DIST}/index.html"
+  COMMENT "Building frontend (Vite)"
+)
 
 # ── Sources ────────────────────────────────────────────────────────────────
 set(SOURCES
@@ -51,6 +68,7 @@ set(SOURCES
 )
 
 add_executable(treeble ${SOURCES})
+add_dependencies(treeble frontend)
 
 target_include_directories(treeble PRIVATE src)
 
