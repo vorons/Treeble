@@ -57,7 +57,7 @@ export default function TrackList() {
 
   return (
     <ScrollArea className="h-full">
-      <div className="divide-y divide-border">
+      <div>
         {folderTracks.length === 0 && (
           <div className="p-4 text-sm text-muted-foreground">
             No audio files in this folder.
@@ -71,8 +71,10 @@ export default function TrackList() {
               key={track.path}
               ref={active ? activeRef : undefined}
               className={cn(
-                "group flex items-center gap-3 px-4 py-2 hover:bg-white/5 cursor-pointer transition-colors",
-                active && "bg-primary/10",
+                "group flex items-center gap-3 px-4 py-2 hover:bg-amber-500/5 cursor-pointer transition-colors border-l-2",
+                active && !paused && "border-primary bg-amber-500/[0.03]",
+                active && paused && "border-dashed border-primary/70 bg-amber-500/[0.03]",
+                !active && "border-transparent",
               )}
               onDoubleClick={() => playTrack(origIdx)}
             >

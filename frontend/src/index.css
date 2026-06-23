@@ -2,37 +2,37 @@
 @import "tw-animate-css";
 
 @theme {
-  --color-background: hsl(0 0% 7%);
-  --color-foreground: hsl(0 0% 93%);
-  --color-card: hsl(0 0% 10%);
-  --color-card-foreground: hsl(0 0% 93%);
-  --color-popover: hsl(0 0% 10%);
-  --color-popover-foreground: hsl(0 0% 93%);
-  --color-primary: hsl(142 72% 49%);
-  --color-primary-foreground: hsl(0 0% 7%);
-  --color-secondary: hsl(0 0% 15%);
-  --color-secondary-foreground: hsl(0 0% 93%);
-  --color-muted: hsl(0 0% 15%);
-  --color-muted-foreground: hsl(0 0% 63%);
-  --color-accent: hsl(0 0% 18%);
-  --color-accent-foreground: hsl(0 0% 93%);
+  --color-background: hsl(25 8% 8%);
+  --color-foreground: hsl(30 10% 92%);
+  --color-card: hsl(25 6% 11%);
+  --color-card-foreground: hsl(30 10% 92%);
+  --color-popover: hsl(25 6% 11%);
+  --color-popover-foreground: hsl(30 10% 92%);
+  --color-primary: hsl(28 80% 52%);
+  --color-primary-foreground: hsl(25 10% 7%);
+  --color-secondary: hsl(25 5% 14%);
+  --color-secondary-foreground: hsl(30 10% 92%);
+  --color-muted: hsl(25 5% 14%);
+  --color-muted-foreground: hsl(25 5% 55%);
+  --color-accent: hsl(25 5% 16%);
+  --color-accent-foreground: hsl(30 10% 92%);
   --color-destructive: hsl(0 62% 50%);
   --color-destructive-foreground: hsl(0 0% 98%);
-  --color-border: hsl(0 0% 20%);
-  --color-input: hsl(0 0% 20%);
-  --color-ring: hsl(142 72% 49%);
+  --color-border: hsl(25 5% 18%);
+  --color-input: hsl(25 5% 18%);
+  --color-ring: hsl(28 80% 52%);
   --radius: 0.5rem;
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: hsl(0, 0%, 25%) transparent;
+  scrollbar-color: hsl(25, 5%, 24%) transparent;
 }
 
 body {
   margin: 0;
   font-family: system-ui, -apple-system, sans-serif;
-  background: hsl(0, 0%, 7%);
-  color: hsl(0, 0%, 93%);
+  background: hsl(25, 8%, 8%);
+  color: hsl(30, 10%, 92%);
   overflow: hidden;
 }

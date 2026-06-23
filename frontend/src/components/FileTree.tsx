@@ -23,8 +23,9 @@ function TreeNode({ node, depth }: { node: FT; depth: number }) {
       <button
         onClick={handleClick}
         className={cn(
-          "flex w-full items-center gap-1.5 px-2 py-1 text-left text-sm hover:bg-white/5 rounded transition-colors",
-          currentFolder === node.path && "bg-primary/20 text-primary",
+          "flex w-full items-center gap-1.5 px-2 py-1 text-left text-sm hover:bg-amber-500/5 rounded transition-colors border-l-2",
+          currentFolder === node.path && "border-primary bg-amber-500/[0.03] text-primary",
+          !(currentFolder === node.path) && "border-transparent",
           isQueueFolder && "font-medium",
         )}
         style={{ paddingLeft: `${12 + depth * 16}px` }}

@@ -90,7 +90,7 @@ export default function PlayerBar() {
           variant="default"
           size="icon"
           onClick={togglePause}
-          className="rounded-full"
+          className="rounded-full transition-all duration-150 hover:shadow-[0_0_14px_-2px_hsl(28,80%,52%,0.45)] active:scale-95"
         >
           {playing && !paused ? (
             <Pause className="size-3.5" />
@@ -114,12 +114,16 @@ export default function PlayerBar() {
         </span>
         <div
           ref={progressRef}
-          className="flex-1 h-1.5 bg-muted rounded-full cursor-pointer group relative overflow-hidden"
+          className="flex-1 h-1 bg-muted rounded-full cursor-pointer group relative overflow-hidden hover:h-1.5 transition-all duration-150"
           onClick={handleProgressClick}
         >
           <div
-            className="h-full bg-primary rounded-full transition-[width] duration-100"
-            style={{ width: `${progressPct}%` }}
+            className="h-full rounded-full transition-all duration-150 ease-out"
+            style={{
+              width: `${progressPct}%`,
+              background: 'linear-gradient(90deg, #C85A17, #E8934A)',
+              opacity: paused ? 0.5 : 1,
+            }}
           />
         </div>
         {hoverSec !== null && (
