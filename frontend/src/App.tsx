@@ -5,6 +5,7 @@ import FileTree from "@/components/FileTree";
 import TrackList from "@/components/TrackList";
 import PlayerBar from "@/components/PlayerBar";
 import StatusBar from "@/components/StatusBar";
+import ToastContainer from "@/components/Toast";
 
 export default function App() {
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -131,6 +132,7 @@ export default function App() {
 
       {/* Bottom status bar */}
       <StatusBar />
+      <ToastContainer />
     </div>
   );
 }

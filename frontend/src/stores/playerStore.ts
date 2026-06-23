@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { getTree, getTracks, getState, playInFolder, pause, resume, nextTrack, prevTrack, seek, setVolume, audioEvent } from "@/lib/ipc";
 import type { Track, FolderTree, PlayerState } from "@/lib/ipc";
+import { useToastStore } from "@/stores/toastStore";
 
 interface PlayerStore extends PlayerState {
   /** Folder tree root (loaded once at startup) */
@@ -44,111 +45,70 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
   currentQueueFolder: null,
 
   init: async () => {
-    const [tree] = await Promise.all([getTree()]);
-    set({ tree });
+    try {
+      const [tree] = await Promise.all([getTree()]);
+      set({ tree });
+    } catch (e) {
+      console.error("init():", e);
+      useToastStore.getState().addToast("Failed to load folder tree");
+    }
   },
 
   selectFolder: async (dir: string) => {
     // ponytail: only updates the *display* — does NOT change the playback queue.
     // The queue stays pinned to the folder of the currently playing track.
-    const tracks = await getTracks(dir);
-    set({ currentFolder: dir, folderTracks: tracks });
+    try {
+      const tracks = await getTracks(dir);
+      set({ currentFolder: dir, folderTracks: tracks });
+    } catch (e) {
+      console.error("selectFolder:", e);
+      useToastStore.getState().addToast("Failed to load tracks from this folder");
+    }
   },
 
   playTrack: async (index: number) => {
     const { currentFolder, folderTracks } = get();
     if (!currentFolder) return;
-    // Sets the backend queue to currentFolder's tracks and plays at index.
-    await playInFolder(currentFolder, index);
-    set({
-      playing: true,
-      paused: false,
-      currentIndex: index,
-      positionSec: 0,
-      currentQueueFolder: currentFolder,
-      // Sync frontend queue so StatusBar/TrackList can read it immediately
-      queue: folderTracks,
-    });
+    try {
+      // Sets the backend queue to currentFolder's tracks and plays at index.
+      await playInFolder(currentFolder, index);
+      set({
+        playing: true,
+        paused: false,
+        currentIndex: index,
+        positionSec: 0,
+        currentQueueFolder: currentFolder,
+        // Sync frontend queue so StatusBar/TrackList can read it immediately
+        queue: folderTracks,
+      });
+    } catch (e) {
+      console.error("playTrack:", e);
+      useToastStore.getState().addToast("Failed to play track");
+    }
   },
 
   togglePause: async () => {
-    const { paused } = get();
-    if (paused) {
-      await resume();
-      set({ paused: false });
-    } else {
-      await pause();
-      set({ paused: true });
+    try {
+      const { paused } = get();
+      if (paused) {
+        await resume();
+        set({ paused: false });
+      } else {
+        await pause();
+        set({ paused: true });
+      }
+    } catch (e) {
+      console.error("togglePause:", e);
+      useToastStore.getState().addToast("Failed to toggle playback");
     }
   },
 
   next: async () => {
-    const { sortField, sortDir, currentQueueFolder, folderTracks, queue, currentIndex } = get();
-    if (!currentQueueFolder) return;
-
-    if (sortField) {
-      const sorted = [...folderTracks].sort((a, b) => {
-        const aV = sortField === 'title' ? a.title : a.durationSec;
-        const bV = sortField === 'title' ? b.title : b.durationSec;
-        return aV < bV ? -1 : aV > bV ? 1 : 0;
-      });
-      const final = sortDir === 'desc' ? sorted.reverse() : sorted;
-      const cur = queue[currentIndex];
-      const pos = final.findIndex((t) => t.path === cur?.path);
-      if (pos < 0 || pos >= final.length - 1) return;
-      const next = final[pos + 1];
-      const origIdx = folderTracks.indexOf(next);
-      await playInFolder(currentQueueFolder, origIdx);
-      set({ currentIndex: origIdx, positionSec: 0 });
-    } else {
-      const idx = await nextTrack();
-      set({ currentIndex: idx, positionSec: 0 });
-    }
-  },
-
-  prev: async () => {
-    const { sortField, sortDir, currentQueueFolder, folderTracks, queue, currentIndex } = get();
-    if (!currentQueueFolder) return;
-
-    if (sortField) {
-      const sorted = [...folderTracks].sort((a, b) => {
-        const aV = sortField === 'title' ? a.title : a.durationSec;
-        const bV = sortField === 'title' ? b.title : b.durationSec;
-        return aV < bV ? -1 : aV > bV ? 1 : 0;
-      });
-      const final = sortDir === 'desc' ? sorted.reverse() : sorted;
-      const cur = queue[currentIndex];
-      const pos = final.findIndex((t) => t.path === cur?.path);
-      if (pos <= 0) return;
-      const prev = final[pos - 1];
-      const origIdx = folderTracks.indexOf(prev);
-      await playInFolder(currentQueueFolder, origIdx);
-      set({ currentIndex: origIdx, positionSec: 0 });
-    } else {
-      const idx = await prevTrack();
-      set({ currentIndex: idx, positionSec: 0 });
-    }
-  },
-
-  seekTo: async (sec: number) => {
-    await seek(sec);
-    set({ positionSec: sec });
-  },
-
-  changeVolume: async (vol: number) => {
-    await setVolume(vol);
-  },
-
-  setSort: (field, dir) => set({ sortField: field, sortDir: dir }),
-
-  onAudioEvent: async (type: string, pos: number, dur: number) => {
-    await audioEvent(type, pos, dur);
-    if (type === "timeupdate") {
-      set({ positionSec: pos });
-    } else if (type === "ended") {
+    try {
       const { sortField, sortDir, currentQueueFolder, folderTracks, queue, currentIndex } = get();
-      if (sortField && currentQueueFolder) {
-        // Navigate in sorted order instead of backend auto-advance
+      if (!currentQueueFolder) return;
+
+      if (sortField) {
         const sorted = [...folderTracks].sort((a, b) => {
           const aV = sortField === 'title' ? a.title : a.durationSec;
           const bV = sortField === 'title' ? b.title : b.durationSec;
@@ -157,19 +117,105 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
         const final = sortDir === 'desc' ? sorted.reverse() : sorted;
         const cur = queue[currentIndex];
         const pos = final.findIndex((t) => t.path === cur?.path);
-        if (pos >= 0 && pos < final.length - 1) {
-          const next = final[pos + 1];
-          const origIdx = folderTracks.indexOf(next);
-          await playInFolder(currentQueueFolder, origIdx);
-          set({ currentIndex: origIdx, positionSec: 0, playing: true, paused: false });
-        } else {
-          set({ playing: false, positionSec: 0 });
-        }
+        if (pos < 0 || pos >= final.length - 1) return;
+        const next = final[pos + 1];
+        const origIdx = folderTracks.indexOf(next);
+        await playInFolder(currentQueueFolder, origIdx);
+        set({ currentIndex: origIdx, positionSec: 0 });
       } else {
-        // Backend auto-advances; sync full state
-        const st = await getState();
-        set({ currentIndex: st.currentIndex, positionSec: 0, playing: st.playing, paused: st.paused, queue: st.queue });
+        const idx = await nextTrack();
+        set({ currentIndex: idx, positionSec: 0 });
       }
+    } catch (e) {
+      console.error("next:", e);
+      useToastStore.getState().addToast("Failed to skip to next track");
+    }
+  },
+
+  prev: async () => {
+    try {
+      const { sortField, sortDir, currentQueueFolder, folderTracks, queue, currentIndex } = get();
+      if (!currentQueueFolder) return;
+
+      if (sortField) {
+        const sorted = [...folderTracks].sort((a, b) => {
+          const aV = sortField === 'title' ? a.title : a.durationSec;
+          const bV = sortField === 'title' ? b.title : b.durationSec;
+          return aV < bV ? -1 : aV > bV ? 1 : 0;
+        });
+        const final = sortDir === 'desc' ? sorted.reverse() : sorted;
+        const cur = queue[currentIndex];
+        const pos = final.findIndex((t) => t.path === cur?.path);
+        if (pos <= 0) return;
+        const prev = final[pos - 1];
+        const origIdx = folderTracks.indexOf(prev);
+        await playInFolder(currentQueueFolder, origIdx);
+        set({ currentIndex: origIdx, positionSec: 0 });
+      } else {
+        const idx = await prevTrack();
+        set({ currentIndex: idx, positionSec: 0 });
+      }
+    } catch (e) {
+      console.error("prev:", e);
+      useToastStore.getState().addToast("Failed to skip to previous track");
+    }
+  },
+
+  seekTo: async (sec: number) => {
+    try {
+      await seek(sec);
+      set({ positionSec: sec });
+    } catch (e) {
+      console.error("seekTo:", e);
+      useToastStore.getState().addToast("Failed to seek");
+    }
+  },
+
+  changeVolume: async (vol: number) => {
+    try {
+      await setVolume(vol);
+    } catch (e) {
+      console.error("changeVolume:", e);
+      useToastStore.getState().addToast("Failed to change volume");
+    }
+  },
+
+  setSort: (field, dir) => set({ sortField: field, sortDir: dir }),
+
+  onAudioEvent: async (type: string, pos: number, dur: number) => {
+    try {
+      await audioEvent(type, pos, dur);
+      if (type === "timeupdate") {
+        set({ positionSec: pos });
+      } else if (type === "ended") {
+        const { sortField, sortDir, currentQueueFolder, folderTracks, queue, currentIndex } = get();
+        if (sortField && currentQueueFolder) {
+          // Navigate in sorted order instead of backend auto-advance
+          const sorted = [...folderTracks].sort((a, b) => {
+            const aV = sortField === 'title' ? a.title : a.durationSec;
+            const bV = sortField === 'title' ? b.title : b.durationSec;
+            return aV < bV ? -1 : aV > bV ? 1 : 0;
+          });
+          const final = sortDir === 'desc' ? sorted.reverse() : sorted;
+          const cur = queue[currentIndex];
+          const pos = final.findIndex((t) => t.path === cur?.path);
+          if (pos >= 0 && pos < final.length - 1) {
+            const next = final[pos + 1];
+            const origIdx = folderTracks.indexOf(next);
+            await playInFolder(currentQueueFolder, origIdx);
+            set({ currentIndex: origIdx, positionSec: 0, playing: true, paused: false });
+          } else {
+            set({ playing: false, positionSec: 0 });
+          }
+        } else {
+          // Backend auto-advances; sync full state
+          const st = await getState();
+          set({ currentIndex: st.currentIndex, positionSec: 0, playing: st.playing, paused: st.paused, queue: st.queue });
+        }
+      }
+    } catch (e) {
+      console.error("onAudioEvent:", e);
+      useToastStore.getState().addToast("Playback error");
     }
   },
 }));
