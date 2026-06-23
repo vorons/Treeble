@@ -20,6 +20,7 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(TAGLIB taglib REQUIRED IMPORTED_TARGET)
 pkg_check_modules(GIO gio-unix-2.0 REQUIRED IMPORTED_TARGET)
 pkg_check_modules(LIBSOUP libsoup-3.0 REQUIRED IMPORTED_TARGET)
+pkg_check_modules(AYATANA ayatana-appindicator3-0.1 REQUIRED IMPORTED_TARGET)
 
 # ── Frontend build (Vite) ──────────────────────────────────────────────────
 set(FRONTEND_DIR "${CMAKE_SOURCE_DIR}/frontend")
@@ -65,6 +66,7 @@ set(SOURCES
   src/audio/WebViewAudioBackend.cpp
   src/web/ResourceServer.cpp
   src/mpris/MPRIS2.cpp
+  src/tray/SystemTray.cpp
 )
 
 add_executable(treeble ${SOURCES})
@@ -85,6 +87,7 @@ target_link_libraries(treeble PRIVATE
   PkgConfig::TAGLIB
   PkgConfig::GIO
   PkgConfig::LIBSOUP
+  PkgConfig::AYATANA
 )
 
 target_compile_features(treeble PRIVATE cxx_std_23)
