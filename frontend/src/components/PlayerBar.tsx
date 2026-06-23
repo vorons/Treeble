@@ -67,7 +67,8 @@ export default function PlayerBar() {
   const handleVolume = (e: React.ChangeEvent<HTMLInputElement>) => {
     const v = parseFloat(e.target.value);
     setVol(v);
-    changeVolume(muted ? 0 : v);
+    setMuted(false);
+    changeVolume(v);
   };
 
   const toggleMute = () => {
