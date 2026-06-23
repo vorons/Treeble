@@ -3,11 +3,14 @@
 #include <saucer/window.hpp>
 #include <saucer/app.hpp>
 
-#include <libayatana-appindicator/app-indicator.h>
-#include <gtk/gtk.h>
+#include <libdbusmenu-glib/server.h>
+#include <libdbusmenu-glib/menuitem.h>
+
+#include <gio/gio.h>
 
 #include <cstdio>
 #include <string>
+#include <cstdlib>
 
 // ── embedded 48×48 PNG tray icon ──────────────────────────────────────────
 // Converted from frontend/dist/favicon.svg
@@ -319,106 +322,287 @@ static constexpr unsigned char s_tray_icon_data[] = {
     0xdf, 0x32, 0x1f, 0xc1, 0xe4, 0xe5, 0x6b, 0x8f, 0xa1, 0x9b, 0x59, 0x5b,
     0xa1, 0x95, 0x02, 0x68, 0xff, 0xb7, 0x83, 0x9f, 0x03, 0x8b, 0x16, 0xcd,
     0x59, 0xf5, 0xd4, 0x2a, 0xa5, 0x9e, 0x78, 0xa2, 0xb5, 0xbf, 0x9e, 0xad,
-    0xcd, 0x5a, 0x00, 0xfa, 0xe7, 0x3e, 0x6d, 0x5c, 0xa9, 0x7b, 0x62, 0x48,
-    0xf6, 0xb9, 0x25, 0x47, 0x96, 0x01, 0x6f, 0xbe, 0x39, 0xe7, 0xf1, 0xa7,
-    0x86, 0x2a, 0x35, 0x69, 0x52, 0x6b, 0x7f, 0xb6, 0xdb, 0xda, 0xac, 0x00,
-    0xa2, 0x19, 0xc1, 0x30, 0xb3, 0xfd, 0x92, 0x35, 0xe3, 0x20, 0x30, 0x6e,
-    0x39, 0x27, 0x37, 0x75, 0x36, 0x50, 0x55, 0x95, 0x37, 0xe2, 0x68, 0x17,
-    0xa0, 0xb8, 0xb8, 0xb5, 0xbf, 0xf7, 0xdb, 0x5a, 0x9b, 0x15, 0x40, 0x50,
-    0xa8, 0x37, 0x98, 0xfd, 0xae, 0x73, 0x00, 0xea, 0xb3, 0x70, 0x14, 0xf0,
-    0xcd, 0x37, 0xfe, 0x81, 0xea, 0xb1, 0x40, 0x49, 0x49, 0x19, 0x5e, 0xd8,
-    0xa5, 0xd4, 0x91, 0x23, 0xad, 0xfd, 0xbd, 0xdf, 0xba, 0x8e, 0xd6, 0xfe,
-    0x80, 0x86, 0xb6, 0xdc, 0xd3, 0x82, 0x0e, 0xc0, 0x81, 0x03, 0x35, 0x8f,
-    0xe8, 0x83, 0x40, 0x2a, 0x85, 0xf7, 0xe3, 0xb1, 0x40, 0x32, 0x99, 0x93,
-    0x0c, 0xd7, 0x02, 0x13, 0x27, 0xde, 0xf2, 0xf5, 0xea, 0x2b, 0x95, 0x7a,
-    0xf7, 0xdd, 0xd6, 0xfe, 0xce, 0xff, 0xfb, 0x36, 0x7b, 0xf6, 0xb0, 0x61,
-    0x5a, 0x0f, 0x1a, 0x34, 0x43, 0x0f, 0x83, 0xd6, 0x85, 0x85, 0xad, 0xfd,
-    0x3d, 0xc7, 0xdb, 0xfe, 0x87, 0xd4, 0xc2, 0x30, 0xf6, 0x1f, 0x51, 0x8d,
-    0x01, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4e, 0x44, 0xae, 0x42, 0x60,
-    0x82,
+    0xd5, 0x9d, 0x19, 0xd0, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4e, 0x44,
+    0xae, 0x42, 0x60, 0x82,
 };
 static constexpr int s_tray_icon_size = 3877;
+
+// ── D-Bus introspection XML for org.kde.StatusNotifierItem ────────────────
+static constexpr const char s_sni_introspection[] =
+    "<node>"
+    "  <interface name='org.kde.StatusNotifierItem'>"
+    "    <property name='Category' type='s' access='read'/>"
+    "    <property name='Id' type='s' access='read'/>"
+    "    <property name='Title' type='s' access='read'/>"
+    "    <property name='Status' type='s' access='read'/>"
+    "    <property name='WindowId' type='i' access='read'/>"
+    "    <property name='IconThemePath' type='s' access='read'/>"
+    "    <property name='IconName' type='s' access='read'/>"
+    "    <property name='Menu' type='o' access='read'/>"
+    "    <method name='ContextMenu'>"
+    "      <arg type='i' name='x' direction='in'/>"
+    "      <arg type='i' name='y' direction='in'/>"
+    "    </method>"
+    "    <method name='Activate'>"
+    "      <arg type='i' name='x' direction='in'/>"
+    "      <arg type='i' name='y' direction='in'/>"
+    "    </method>"
+    "    <method name='SecondaryActivate'>"
+    "      <arg type='i' name='x' direction='in'/>"
+    "      <arg type='i' name='y' direction='in'/>"
+    "    </method>"
+    "    <method name='Scroll'>"
+    "      <arg type='i' name='delta' direction='in'/>"
+    "      <arg type='s' name='orientation' direction='in'/>"
+    "    </method>"
+    "    <signal name='NewTitle'/>"
+    "    <signal name='NewIcon'/>"
+    "    <signal name='NewStatus'/>"
+    "  </interface>"
+    "</node>";
 
 // ── implementation ─────────────────────────────────────────────────────────
 struct SystemTray::Impl
 {
-    AppIndicator *indicator{};
-    GtkWidget *menu{};
-    GtkWidget *show_hide_item{};
+    saucer::application *app{};
     saucer::window &window;
+
+    GDBusConnection *conn{};
+    guint sni_reg_id{};
+    guint watcher_signal_id{};
+
+    DbusmenuServer *menu_server{};
+    DbusmenuMenuitem *root_menu{};
+    DbusmenuMenuitem *show_hide_item{};
+
+    std::string icon_theme_path;
     bool visible{true};
 
     Impl(saucer::window &win) : window(win) {}
     ~Impl()
     {
-        if (indicator)
-            g_object_unref(indicator);
+        if (sni_reg_id)
+            g_dbus_connection_unregister_object(conn, sni_reg_id);
+        if (watcher_signal_id)
+            g_dbus_connection_signal_unsubscribe(conn, watcher_signal_id);
+        if (menu_server)
+            g_object_unref(menu_server);
+        if (conn)
+            g_object_unref(conn);
     }
 };
 
-SystemTray::SystemTray(saucer::application *app, saucer::window &window)
-    : m_impl(std::make_unique<Impl>(window))
+// ── SNI property getter ────────────────────────────────────────────────────
+static GVariant *
+get_sni_property(GDBusConnection *conn, const gchar *sender,
+                 const gchar *object_path, const gchar *interface_name,
+                 const gchar *property_name, GError **error, gpointer user_data)
 {
-    // ── write embedded icon to a proper icon-theme directory ─────────────
-    // app-indicator looks for icons under <theme_path>/<size>/<category>/<name>.png
-    // We use 22×22 (the standard tray icon size) in the "status" category.
-    const char *icon_dir = "/tmp/treeble-tray";
-    const char *icon_name = "treeble";
-    g_mkdir_with_parents(icon_dir, 0755);
+    auto *impl = static_cast<SystemTray::Impl *>(user_data);
 
-    // Build the icon path: /tmp/treeble-tray/hicolor/22x22/status/treeble.png
-    auto icon_file = std::string(icon_dir) + "/hicolor/22x22/status/" + icon_name + ".png";
-    g_mkdir_with_parents((std::string(icon_dir) + "/hicolor/22x22/status").c_str(), 0755);
+    if (g_strcmp0(property_name, "Category") == 0)
+        return g_variant_new_string("ApplicationStatus");
+    if (g_strcmp0(property_name, "Id") == 0)
+        return g_variant_new_string("treeble");
+    if (g_strcmp0(property_name, "Title") == 0)
+        return g_variant_new_string("Treeble");
+    if (g_strcmp0(property_name, "Status") == 0)
+        return g_variant_new_string("Active");
+    if (g_strcmp0(property_name, "WindowId") == 0)
+        return g_variant_new_int32(0);
+    if (g_strcmp0(property_name, "IconThemePath") == 0)
+        return g_variant_new_string(impl->icon_theme_path.c_str());
+    if (g_strcmp0(property_name, "IconName") == 0)
+        return g_variant_new_string("treeble");
+    if (g_strcmp0(property_name, "Menu") == 0)
+        return g_variant_new_object_path("/StatusNotifierItem/Menu");
+
+    return nullptr;
+}
+
+// ── SNI method calls ───────────────────────────────────────────────────────
+static void
+handle_sni_method_call(GDBusConnection *conn, const gchar *sender,
+                       const gchar *object_path, const gchar *interface_name,
+                       const gchar *method_name, GVariant *parameters,
+                       GDBusMethodInvocation *invocation, gpointer user_data)
+{
+    auto *impl = static_cast<SystemTray::Impl *>(user_data);
+
+    if (g_strcmp0(method_name, "Activate") == 0 || g_strcmp0(method_name, "SecondaryActivate") == 0)
+    {
+        // Toggle window visibility
+        if (impl->visible)
+        {
+            impl->window.hide();
+            impl->visible = false;
+            dbusmenu_menuitem_property_set(impl->show_hide_item,
+                                            DBUSMENU_MENUITEM_PROP_LABEL, "Show");
+        }
+        else
+        {
+            impl->window.show();
+            impl->visible = true;
+            dbusmenu_menuitem_property_set(impl->show_hide_item,
+                                            DBUSMENU_MENUITEM_PROP_LABEL, "Hide");
+        }
+        g_dbus_method_invocation_return_value(invocation, nullptr);
+    }
+    else if (g_strcmp0(method_name, "ContextMenu") == 0)
+    {
+        // The panel is requesting the context menu — nothing to do here,
+        // dbusmenu-server handles it.
+        g_dbus_method_invocation_return_value(invocation, nullptr);
+    }
+    else if (g_strcmp0(method_name, "Scroll") == 0)
+    {
+        g_dbus_method_invocation_return_value(invocation, nullptr);
+    }
+    else
+    {
+        g_dbus_method_invocation_return_error(invocation, G_DBUS_ERROR,
+                                               G_DBUS_ERROR_UNKNOWN_METHOD,
+                                               "Unknown method: %s", method_name);
+    }
+}
+
+// ── SNI interface vtable ────────────────────────────────────────────────────
+static const GDBusInterfaceVTable s_sni_vtable = {
+    handle_sni_method_call,
+    get_sni_property,
+    nullptr // set_property – not needed, all properties are read-only
+};
+
+// ── helper: write icon to theme path ────────────────────────────────────────
+static std::string write_icon()
+{
+    const char *data_dir = g_get_user_data_dir();
+    auto icon_dir = std::string(data_dir) + "/treeble/icons";
+    auto icon_file = icon_dir + "/hicolor/22x22/status/treeble.png";
+
+    g_mkdir_with_parents((icon_dir + "/hicolor/22x22/status").c_str(), 0755);
     g_file_set_contents(icon_file.c_str(),
                          reinterpret_cast<const char *>(s_tray_icon_data),
                          s_tray_icon_size, nullptr);
+    return icon_dir;
+}
 
-    // ── build indicator ──────────────────────────────────────────────────
-    m_impl->indicator = app_indicator_new("treeble",
-                                           "Treeble",
-                                           APP_INDICATOR_CATEGORY_APPLICATION_STATUS);
-    app_indicator_set_status(m_impl->indicator, APP_INDICATOR_STATUS_ACTIVE);
-    app_indicator_set_icon_theme_path(m_impl->indicator, icon_dir);
-    app_indicator_set_icon_full(m_impl->indicator, icon_name, "Treeble");
-    // ponytail: the temp dir leaks across sessions. A production app would
-    // install the icon to $prefix/share/icons/hicolor/22x22/status/.
+// ── constructor ─────────────────────────────────────────────────────────────
+SystemTray::SystemTray(saucer::application *app, saucer::window &window)
+    : m_impl(std::make_unique<Impl>(window))
+{
+    m_impl->app = app;
 
-    // ── right-click menu ─────────────────────────────────────────────────
-    m_impl->menu = gtk_menu_new();
+    // ── write icon ───────────────────────────────────────────────────────
+    m_impl->icon_theme_path = write_icon();
 
-    auto *show_hide = gtk_menu_item_new_with_label("Hide");
+    // ── get session bus ──────────────────────────────────────────────────
+    GError *error = nullptr;
+    m_impl->conn = g_bus_get_sync(G_BUS_TYPE_SESSION, nullptr, &error);
+    if (!m_impl->conn)
+    {
+        std::fprintf(stderr, "[tray] failed to connect to D-Bus: %s\n", error->message);
+        g_error_free(error);
+        return;
+    }
+
+    // ── create menu ──────────────────────────────────────────────────────
+    m_impl->root_menu = dbusmenu_menuitem_new();
+
+    auto *show_hide = dbusmenu_menuitem_new();
+    dbusmenu_menuitem_property_set(show_hide, DBUSMENU_MENUITEM_PROP_LABEL, "Hide");
+    dbusmenu_menuitem_property_set_bool(show_hide, DBUSMENU_MENUITEM_PROP_ENABLED, TRUE);
     m_impl->show_hide_item = show_hide;
-    g_signal_connect_swapped(show_hide, "activate",
-                             G_CALLBACK(+[](SystemTray::Impl *impl) {
-                                 if (impl->visible)
-                                 {
-                                     impl->window.hide();
-                                     impl->visible = false;
-                                     gtk_menu_item_set_label(
-                                         GTK_MENU_ITEM(impl->show_hide_item), "Show");
-                                 }
-                                 else
-                                 {
-                                     impl->window.show();
-                                     impl->visible = true;
-                                     gtk_menu_item_set_label(
-                                         GTK_MENU_ITEM(impl->show_hide_item), "Hide");
-                                 }
-                             }),
-                             m_impl.get());
-    gtk_menu_shell_append(GTK_MENU_SHELL(m_impl->menu), show_hide);
-    gtk_widget_show(show_hide);
 
-    auto *quit = gtk_menu_item_new_with_label("Quit");
-    g_signal_connect_swapped(quit, "activate",
-                             G_CALLBACK(+[](saucer::application *a) {
-                                 a->quit();
-                             }),
-                             app);
-    gtk_menu_shell_append(GTK_MENU_SHELL(m_impl->menu), quit);
-    gtk_widget_show(quit);
+    g_signal_connect_swapped(show_hide, DBUSMENU_MENUITEM_SIGNAL_ITEM_ACTIVATED,
+                              G_CALLBACK(+[](SystemTray::Impl *impl) {
+                                  if (impl->visible)
+                                  {
+                                      impl->window.hide();
+                                      impl->visible = false;
+                                      dbusmenu_menuitem_property_set(
+                                          impl->show_hide_item,
+                                          DBUSMENU_MENUITEM_PROP_LABEL, "Show");
+                                  }
+                                  else
+                                  {
+                                      impl->window.show();
+                                      impl->visible = true;
+                                      dbusmenu_menuitem_property_set(
+                                          impl->show_hide_item,
+                                          DBUSMENU_MENUITEM_PROP_LABEL, "Hide");
+                                  }
+                              }),
+                              m_impl.get());
 
-    app_indicator_set_menu(m_impl->indicator, GTK_MENU(m_impl->menu));
+    auto *quit = dbusmenu_menuitem_new();
+    dbusmenu_menuitem_property_set(quit, DBUSMENU_MENUITEM_PROP_LABEL, "Quit");
+    dbusmenu_menuitem_property_set_bool(quit, DBUSMENU_MENUITEM_PROP_ENABLED, TRUE);
+    g_signal_connect_swapped(quit, DBUSMENU_MENUITEM_SIGNAL_ITEM_ACTIVATED,
+                              G_CALLBACK(+[](saucer::application *a) {
+                                  a->quit();
+                              }),
+                              app);
+
+    dbusmenu_menuitem_child_append(m_impl->root_menu, show_hide);
+    dbusmenu_menuitem_child_append(m_impl->root_menu, quit);
+
+    // ── create dbusmenu server ───────────────────────────────────────────
+    m_impl->menu_server = dbusmenu_server_new("/StatusNotifierItem/Menu");
+    dbusmenu_server_set_root(m_impl->menu_server, m_impl->root_menu);
+
+    // Share the icon theme path with the menu
+    const char *paths[] = {m_impl->icon_theme_path.c_str(), nullptr};
+    dbusmenu_server_set_icon_paths(m_impl->menu_server, const_cast<char **>(paths));
+
+    // ── register StatusNotifierItem on the bus ───────────────────────────
+    GDBusNodeInfo *node = g_dbus_node_info_new_for_xml(s_sni_introspection, nullptr);
+
+    auto id = g_dbus_connection_register_object(
+        m_impl->conn, "/StatusNotifierItem",
+        node->interfaces[0], // the first (and only) interface
+        &s_sni_vtable, m_impl.get(), nullptr, &error);
+
+    g_dbus_node_info_unref(node);
+
+    if (id == 0)
+    {
+        std::fprintf(stderr, "[tray] failed to register SNI object: %s\n", error->message);
+        g_error_free(error);
+        return;
+    }
+    m_impl->sni_reg_id = id;
+
+    // ── register with watcher ────────────────────────────────────────────
+    auto *proxy = g_dbus_proxy_new_sync(m_impl->conn, G_DBUS_PROXY_FLAGS_NONE, nullptr,
+                                         "org.kde.StatusNotifierWatcher",
+                                         "/StatusNotifierWatcher",
+                                         "org.kde.StatusNotifierWatcher",
+                                         nullptr, &error);
+    if (!proxy)
+    {
+        std::fprintf(stderr, "[tray] StatusNotifierWatcher not available: %s\n", error->message);
+        g_error_free(error);
+        // Not fatal — the icon just won't appear until a watcher connects
+        return;
+    }
+
+    // Register with our unique bus name, not a well-known name
+    auto *own_name = g_dbus_connection_get_unique_name(m_impl->conn);
+    auto *result = g_dbus_proxy_call_sync(proxy, "RegisterStatusNotifierItem",
+                                            g_variant_new("(s)", own_name),
+                                            G_DBUS_CALL_FLAGS_NONE, -1, nullptr, &error);
+    if (!result)
+    {
+        std::fprintf(stderr, "[tray] failed to register with watcher: %s\n", error->message);
+        g_error_free(error);
+    }
+    else
+    {
+        g_variant_unref(result);
+    }
+
+    g_object_unref(proxy);
 
     // ── track window visibility ──────────────────────────────────────────
     window.on<saucer::window::event::minimize>([this](bool minimized)
@@ -427,20 +611,21 @@ SystemTray::SystemTray(saucer::application *app, saucer::window &window)
         {
             m_impl->window.hide();
             m_impl->visible = false;
-            gtk_menu_item_set_label(GTK_MENU_ITEM(m_impl->show_hide_item), "Show");
+            dbusmenu_menuitem_property_set(m_impl->show_hide_item,
+                                            DBUSMENU_MENUITEM_PROP_LABEL, "Show");
         }
     });
 
-    // Intercept close → hide to tray instead of quitting
     window.on<saucer::window::event::close>([this]() -> saucer::policy
     {
         m_impl->window.hide();
         m_impl->visible = false;
-        gtk_menu_item_set_label(GTK_MENU_ITEM(m_impl->show_hide_item), "Show");
+        dbusmenu_menuitem_property_set(m_impl->show_hide_item,
+                                        DBUSMENU_MENUITEM_PROP_LABEL, "Show");
         return saucer::policy::block;
     });
-    // ponytail: returning policy::block prevents the window from closing.
-    // The user must use "Quit" from the tray menu to exit.
+
+    std::fprintf(stderr, "[tray] registered StatusNotifierItem\n");
 }
 
 SystemTray::~SystemTray() = default;
