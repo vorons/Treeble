@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { usePlayerStore } from "@/stores/playerStore";
 import { cn } from "@/lib/utils";
-import { Play, Pause } from "lucide-react";
+import { Play, Pause, Music } from "lucide-react";
 
 function fmtDuration(sec: number): string {
   const m = Math.floor(sec / 60);
@@ -29,8 +29,21 @@ export default function TrackList() {
 
   if (!currentFolder) {
     return (
-      <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
-        Select a folder from the tree
+      <div className="flex flex-col items-center justify-center h-full gap-5 select-none">
+        <div className="size-16 rounded-2xl bg-primary/10 flex items-center justify-center">
+          <Music className="size-8 text-primary" />
+        </div>
+        <div className="text-center">
+          <p className="text-base text-foreground font-medium">Select a folder from the tree</p>
+          <p className="text-sm text-muted-foreground mt-1">Choose a folder to browse its music files</p>
+        </div>
+        <div className="flex flex-wrap justify-center gap-3 mt-2">
+          <kbd className="px-2 py-1 text-xs bg-muted rounded border border-border text-muted-foreground">Space</kbd>
+          <span className="text-xs text-muted-foreground self-center">Play / Pause</span>
+          <kbd className="px-2 py-1 text-xs bg-muted rounded border border-border text-muted-foreground">←</kbd>
+          <kbd className="px-2 py-1 text-xs bg-muted rounded border border-border text-muted-foreground">→</kbd>
+          <span className="text-xs text-muted-foreground self-center">Seek</span>
+        </div>
       </div>
     );
   }
