@@ -1,4 +1,4 @@
-import { useEffect, useRef, useMemo } from "react";
+import { useEffect, useRef } from "react";
 import { usePlayerStore } from "@/stores/playerStore";
 import { cn } from "@/lib/utils";
 import { Play, Pause, Music } from "lucide-react";
@@ -20,8 +20,6 @@ export default function TrackList() {
   const paused = usePlayerStore((s) => s.paused);
   const currentFolder = usePlayerStore((s) => s.currentFolder);
   const currentQueueFolder = usePlayerStore((s) => s.currentQueueFolder);
-  const sortField = usePlayerStore((s) => s.sortField);
-  const sortDir = usePlayerStore((s) => s.sortDir);
   const playTrack = usePlayerStore((s) => s.playTrack);
   const togglePause = usePlayerStore((s) => s.togglePause);
   const activeRef = useRef<HTMLDivElement>(null);
@@ -30,18 +28,6 @@ export default function TrackList() {
   useEffect(() => {
     activeRef.current?.scrollIntoView({ block: "nearest" });
   }, [currentIndex]);
-
-  const sortedTracks = useMemo(() => {
-    if (!sortField) return folderTracks;
-    const sorted = [...folderTracks].sort((a, b) => {
-      const aVal = sortField === 'title' ? a.title : a.durationSec;
-      const bVal = sortField === 'title' ? b.title : b.durationSec;
-      if (aVal < bVal) return -1;
-      if (aVal > bVal) return 1;
-      return 0;
-    });
-    return sortDir === 'desc' ? sorted.reverse() : sorted;
-  }, [folderTracks, sortField, sortDir]);
 
   if (!currentFolder) {
     return (
@@ -77,7 +63,7 @@ export default function TrackList() {
             No audio files in this folder.
           </div>
         )}
-        {sortedTracks.map((track) => {
+        {folderTracks.map((track) => {
           const active = isCurrentTrack(track);
           const origIdx = folderTracks.indexOf(track);
           return (
