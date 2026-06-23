@@ -82,12 +82,17 @@ IPCHandler::IPCHandler(saucer::smartview &wv, FileScanner &fs, TagReader &tr,
     wv.expose("play", [this](int index)
     {
         std::lock_guard lk(s_state_mtx);
-        if (index >= m_state.queue.size())
+        std::fprintf(stderr, "[IPC] play index=%d, queue.size=%zu\n", index, m_state.queue.size());
+        if (index < 0 || static_cast<std::size_t>(index) >= m_state.queue.size())
+        {
+            std::fprintf(stderr, "[IPC] play: index out of range\n");
             return;
-        m_state.current_index = index;
+        }
+        m_state.current_index = static_cast<std::size_t>(index);
         m_state.playing = true;
         m_state.paused = false;
-        auto &t = m_state.queue[index];
+        auto &t = m_state.queue[m_state.current_index];
+        std::fprintf(stderr, "[IPC] play: loading path=%s\n", t.path.c_str());
         m_ab.load(t.path);
         m_ab.play();
         m_mpris.update(m_state);

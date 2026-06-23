@@ -12,6 +12,5 @@ public:
     explicit ResourceServer(saucer::smartview &wv);
 
 private:
-    saucer::scheme::response handle(const saucer::scheme::request &req);
     static std::string percent_decode(std::string_view s);
 };
