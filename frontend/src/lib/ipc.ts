@@ -70,12 +70,12 @@ export function resume(): Promise<void> {
   return call("resume") as Promise<void>;
 }
 
-export function nextTrack(): Promise<void> {
-  return call("next") as Promise<void>;
+export function nextTrack(): Promise<number> {
+  return call("next") as Promise<number>;
 }
 
-export function prevTrack(): Promise<void> {
-  return call("prev") as Promise<void>;
+export function prevTrack(): Promise<number> {
+  return call("prev") as Promise<number>;
 }
 
 export function seek(position: number): Promise<void> {

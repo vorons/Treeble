@@ -12,12 +12,43 @@
 #include <cstdio>
 #include <string>
 #include <cstdlib>
+#include <fstream>
 
 // ── helpers ─────────────────────────────────────────────────────────────────
+static std::string xdg_music_dir()
+{
+    if (auto *home = std::getenv("HOME"))
+    {
+        auto path = std::string(home) + "/.config/user-dirs.dirs";
+        std::ifstream f(path);
+        std::string line;
+        while (std::getline(f, line))
+        {
+            // Match XDG_MUSIC_DIR="..." or XDG_MUSIC_DIR=...
+            static constexpr char prefix[] = "XDG_MUSIC_DIR=";
+            auto pos = line.find(prefix);
+            if (pos == std::string::npos)
+                continue;
+            auto val = line.substr(pos + sizeof(prefix) - 1);
+            // Strip surrounding quotes
+            if (val.size() >= 2 && (val.front() == '\"' || val.front() == '\'') && val.front() == val.back())
+                val = val.substr(1, val.size() - 2);
+            // Expand leading $HOME/
+            if (val.rfind("$HOME/", 0) == 0)
+                val.replace(0, 5, home);
+            return val;
+        }
+    }
+    return {};
+}
+
 static std::string music_dir()
 {
     if (auto *env = std::getenv("TREEBLE_ROOT"))
         return env;
+
+    if (auto xdg = xdg_music_dir(); !xdg.empty())
+        return xdg;
 
     if (auto *home = std::getenv("HOME"))
         return std::string(home) + "/Music";

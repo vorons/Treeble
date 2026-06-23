@@ -66,6 +66,11 @@ IPCHandler::IPCHandler(saucer::smartview &wv, FileScanner &fs, TagReader &tr,
         auto files = m_fs.list_audio(dir);
         std::vector<TrackView> out;
         out.reserve(files.size());
+        {
+            std::lock_guard lk(s_state_mtx);
+            m_state.queue.clear();
+            m_state.current_index = 0;
+        }
         for (auto &f : files)
         {
             auto t = make_track(f, m_tr);
@@ -92,7 +97,7 @@ IPCHandler::IPCHandler(saucer::smartview &wv, FileScanner &fs, TagReader &tr,
         m_state.playing = true;
         m_state.paused = false;
         auto &t = m_state.queue[m_state.current_index];
-        std::fprintf(stderr, "[IPC] play: loading path=%s\n", t.path.c_str());
+        std::fprintf(stderr, "[IPC] play: idx=%zu title=%s dur=%lu path=%s\n", m_state.current_index, t.title.c_str(), static_cast<unsigned long>(t.duration_sec), t.path.c_str());
         m_ab.load(t.path);
         m_ab.play();
         m_mpris.update(m_state);
@@ -114,7 +119,7 @@ IPCHandler::IPCHandler(saucer::smartview &wv, FileScanner &fs, TagReader &tr,
         m_mpris.update(m_state);
     });
 
-    wv.expose("next", [this]()
+    wv.expose("next", [this]() -> int
     {
         std::lock_guard lk(s_state_mtx);
         if (m_state.current_index + 1 < m_state.queue.size())
@@ -125,9 +130,10 @@ IPCHandler::IPCHandler(saucer::smartview &wv, FileScanner &fs, TagReader &tr,
             m_ab.play();
             m_mpris.update(m_state);
         }
+        return static_cast<int>(m_state.current_index);
     });
 
-    wv.expose("prev", [this]()
+    wv.expose("prev", [this]() -> int
     {
         std::lock_guard lk(s_state_mtx);
         if (m_state.current_index > 0)
@@ -138,6 +144,7 @@ IPCHandler::IPCHandler(saucer::smartview &wv, FileScanner &fs, TagReader &tr,
             m_ab.play();
             m_mpris.update(m_state);
         }
+        return static_cast<int>(m_state.current_index);
     });
 
     // ── seek / volume ─────────────────────────────────────────────────────

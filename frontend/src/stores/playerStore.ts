@@ -40,18 +40,13 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
 
   selectFolder: async (dir: string) => {
     const tracks = await getTracks(dir);
-    set({ currentFolder: dir, folderTracks: tracks });
+    set({ currentFolder: dir, folderTracks: tracks, queue: tracks, currentIndex: 0, positionSec: 0 });
   },
 
   playTrack: async (index: number) => {
-    // Calculate global queue index
-    const { queue, folderTracks, currentFolder } = get();
-    const queueStart = queue.length - folderTracks.length;
-    // If the current folder changed, we need to find the right global index
-    // ponytail: assumes selectFolder was called just before; tracks are appended
-    // to queue in order. A more robust approach would index by track path.
+    // ponytail: queue is reset on folder select, so local index == global index
     await play(index);
-    set({ playing: true, paused: false, currentIndex: index });
+    set({ playing: true, paused: false, currentIndex: index, positionSec: 0 });
   },
 
   togglePause: async () => {
@@ -66,11 +61,13 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
   },
 
   next: async () => {
-    await nextTrack();
+    const idx = await nextTrack();
+    set({ currentIndex: idx, positionSec: 0 });
   },
 
   prev: async () => {
-    await prevTrack();
+    const idx = await prevTrack();
+    set({ currentIndex: idx, positionSec: 0 });
   },
 
   seekTo: async (sec: number) => {
@@ -82,10 +79,14 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
     await setVolume(vol);
   },
 
-  onAudioEvent: (type: string, pos: number, dur: number) => {
-    audioEvent(type, pos, dur); // fire-and-forget to backend
+  onAudioEvent: async (type: string, pos: number, dur: number) => {
+    await audioEvent(type, pos, dur);
     if (type === "timeupdate") {
       set({ positionSec: pos });
+    } else if (type === "ended") {
+      // Backend auto-advances; sync full state
+      const st = await getState();
+      set({ currentIndex: st.currentIndex, positionSec: 0, playing: st.playing, paused: st.paused, queue: st.queue });
     }
   },
 }));
