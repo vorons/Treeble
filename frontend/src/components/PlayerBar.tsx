@@ -143,7 +143,8 @@ export default function PlayerBar() {
           step="0.01"
           value={muted ? 0 : vol}
           onChange={handleVolume}
-          className="w-16 accent-primary"
+          className="w-16"
+          style={{ '--range-pct': `${(muted ? 0 : vol) * 100}%` } as React.CSSProperties}
         />
       </div>
     </div>
