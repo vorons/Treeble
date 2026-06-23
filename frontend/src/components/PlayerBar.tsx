@@ -33,6 +33,7 @@ export default function PlayerBar() {
   const [vol, setVol] = useState(0.7);
   const [muted, setMuted] = useState(false);
   const [hoverSec, setHoverSec] = useState<number | null>(null);
+  const [hoverVol, setHoverVol] = useState(false);
   const progressRef = useRef<HTMLDivElement>(null);
 
   const currentTrack = currentIndex < queue.length ? queue[currentIndex] : null;
@@ -135,7 +136,16 @@ export default function PlayerBar() {
       </div>
 
       {/* Volume */}
-      <div className="flex items-center gap-2 shrink-0 w-24">
+      <div
+        className="flex items-center gap-2 shrink-0 w-24 relative"
+        onMouseEnter={() => setHoverVol(true)}
+        onMouseLeave={() => setHoverVol(false)}
+      >
+        {hoverVol && (
+          <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-background text-foreground text-xs px-1.5 py-0.5 rounded border border-border whitespace-nowrap pointer-events-none z-10">
+            {Math.round((muted ? 0 : vol) * 100)}%
+          </div>
+        )}
         <Button variant="ghost" size="icon" onClick={toggleMute} className="size-8">
           {muted || vol === 0 ? <VolumeX className="size-4" /> : <Volume2 className="size-4" />}
         </Button>
