@@ -1,12 +1,7 @@
+import { useCallback } from "react";
 import { usePlayerStore } from "@/stores/playerStore";
-import { ArrowUpDown } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
+import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export default function StatusBar() {
   const queue = usePlayerStore((s) => s.queue);
@@ -18,7 +13,6 @@ export default function StatusBar() {
   const sortDir = usePlayerStore((s) => s.sortDir);
   const setSort = usePlayerStore((s) => s.setSort);
 
-  // Show info about the queue (playing folder), fall back to selected folder
   const ctxFolder = currentQueueFolder ?? currentFolder;
   const count = queue.length;
   const folderName = ctxFolder
@@ -27,16 +21,22 @@ export default function StatusBar() {
 
   const currentTrack = currentIndex < count ? queue[currentIndex] : null;
 
-  const sortOptions = [
-    { field: null, dir: 'asc' as const, label: "Default" },
-    { field: 'title' as const, dir: 'asc' as const, label: "Name ↑" },
-    { field: 'title' as const, dir: 'desc' as const, label: "Name ↓" },
-    { field: 'duration' as const, dir: 'asc' as const, label: "Duration ↑" },
-    { field: 'duration' as const, dir: 'desc' as const, label: "Duration ↓" },
-  ];
+  const toggleSort = useCallback(
+    (field: "title" | "duration") => {
+      if (sortField === field) {
+        // Toggle direction
+        setSort(field, sortDir === "asc" ? "desc" : "asc");
+      } else {
+        // Set new field, default ascending
+        setSort(field, "asc");
+      }
+    },
+    [sortField, sortDir, setSort],
+  );
 
-  const isActive = (field: typeof sortField, dir: typeof sortDir) =>
-    sortField === field && sortDir === dir;
+  const clearSort = useCallback(() => {
+    setSort(null, "asc");
+  }, [setSort]);
 
   return (
     <div className="flex items-center justify-between border-t border-border bg-black/20 px-4 py-1 text-xs text-muted-foreground shrink-0">
@@ -49,33 +49,57 @@ export default function StatusBar() {
               ? "Playing"
               : "No folder selected"}
       </span>
-      <span className="truncate ml-4 text-right">
-        {currentTrack ? currentTrack.title : "\u00a0"}
-      </span>
 
-      {/* Sort dropdown */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-6 shrink-0 ml-2"
+      <div className="flex items-center gap-3 shrink-0 ml-4">
+        {/* Sort toggles */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => toggleSort("title")}
+            className={cn(
+              "flex items-center gap-0.5 hover:text-foreground transition-colors",
+              sortField === "title" && "text-primary font-medium",
+            )}
           >
-            <ArrowUpDown className="size-3.5" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent side="top" align="end" className="min-w-32">
-          {sortOptions.map((opt) => (
-            <DropdownMenuItem
-              key={opt.label}
-              onClick={() => setSort(opt.field, opt.dir)}
-              className={isActive(opt.field, opt.dir) ? "text-primary font-medium" : ""}
+            Name
+            {sortField === "title" ? (
+              sortDir === "asc" ? (
+                <ArrowUp className="size-3" />
+              ) : (
+                <ArrowDown className="size-3" />
+              )
+            ) : null}
+          </button>
+          <button
+            onClick={() => toggleSort("duration")}
+            className={cn(
+              "flex items-center gap-0.5 hover:text-foreground transition-colors",
+              sortField === "duration" && "text-primary font-medium",
+            )}
+          >
+            Duration
+            {sortField === "duration" ? (
+              sortDir === "asc" ? (
+                <ArrowUp className="size-3" />
+              ) : (
+                <ArrowDown className="size-3" />
+              )
+            ) : null}
+          </button>
+          {sortField && (
+            <button
+              onClick={clearSort}
+              className="hover:text-foreground transition-colors"
+              title="Clear sort"
             >
-              {opt.label}
-            </DropdownMenuItem>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
+              <ArrowUpDown className="size-3" />
+            </button>
+          )}
+        </div>
+
+        <span className="truncate text-right max-w-48">
+          {currentTrack ? currentTrack.title : "\u00a0"}
+        </span>
+      </div>
     </div>
   );
 }
