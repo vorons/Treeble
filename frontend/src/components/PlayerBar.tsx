@@ -10,7 +10,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 function fmtTime(sec: number): string {
   const m = Math.floor(sec / 60);
@@ -112,26 +111,24 @@ export default function PlayerBar() {
         <span className="text-xs text-muted-foreground w-8 text-right tabular-nums shrink-0">
           {fmtTime(positionSec)}
         </span>
-        <Tooltip open={hoverSec !== null}>
-          <TooltipTrigger asChild>
-            <div
-              ref={progressRef}
-              className="flex-1 h-1.5 bg-muted rounded-full cursor-pointer group relative overflow-hidden"
-              onClick={handleProgressClick}
-            >
-              <div
-                className="h-full bg-primary rounded-full transition-[width] duration-100"
-                style={{ width: `${progressPct}%` }}
-              />
-            </div>
-          </TooltipTrigger>
-          <TooltipContent
-            side="top"
-            style={{ left: `${(hoverSec! / duration) * 100}%` }}
+        <div
+          ref={progressRef}
+          className="flex-1 h-1.5 bg-muted rounded-full cursor-pointer group relative overflow-hidden"
+          onClick={handleProgressClick}
+        >
+          <div
+            className="h-full bg-primary rounded-full transition-[width] duration-100"
+            style={{ width: `${progressPct}%` }}
+          />
+        </div>
+        {hoverSec !== null && (
+          <div
+            className="absolute -top-7 -translate-x-1/2 bg-background text-foreground text-xs px-1.5 py-0.5 rounded border border-border whitespace-nowrap pointer-events-none z-10"
+            style={{ left: `${(hoverSec / duration) * 100}%` }}
           >
-            {fmtTime(hoverSec ?? 0)}
-          </TooltipContent>
-        </Tooltip>
+            {fmtTime(hoverSec)}
+          </div>
+        )}
         <span className="text-xs text-muted-foreground w-8 tabular-nums shrink-0">
           {fmtTime(duration)}
         </span>
