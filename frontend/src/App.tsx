@@ -1,4 +1,4 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useCallback } from "react";
 import { usePlayerStore } from "@/stores/playerStore";
 import TitleBar from "@/components/TitleBar";
 import FileTree from "@/components/FileTree";
@@ -68,6 +68,45 @@ export default function App() {
       delete (window as unknown as Record<string, unknown>).audioPlayer;
     };
   }, []);
+
+  // ── Keyboard shortcuts ──
+  const togglePause = usePlayerStore((s) => s.togglePause);
+  const seekTo = usePlayerStore((s) => s.seekTo);
+  const positionSec = usePlayerStore((s) => s.positionSec);
+  const queue = usePlayerStore((s) => s.queue);
+  const currentIndex = usePlayerStore((s) => s.currentIndex);
+
+  const onKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      // Ignore when user is typing in an input
+      const target = e.target as HTMLElement;
+      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable) return;
+
+      switch (e.code) {
+        case "Space":
+          e.preventDefault();
+          togglePause();
+          break;
+        case "ArrowLeft":
+          e.preventDefault();
+          seekTo(Math.max(0, positionSec - 5));
+          break;
+        case "ArrowRight":
+          e.preventDefault();
+          {
+            const dur = currentIndex < queue.length ? queue[currentIndex].durationSec : 0;
+            seekTo(Math.min(dur, positionSec + 5));
+          }
+          break;
+      }
+    },
+    [togglePause, seekTo, positionSec, queue, currentIndex],
+  );
+
+  useEffect(() => {
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [onKeyDown]);
 
   return (
     <div className="flex flex-col h-dvh">

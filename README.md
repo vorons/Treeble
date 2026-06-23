@@ -53,6 +53,8 @@ cmake --build build -j$(nproc)
 |---------|----------|
 | Двойной клик по треку | Воспроизвести |
 | Кнопки в PlayerBar | Play/Pause, Next, Prev, Seek, Volume |
+| `Space` | Play/Pause |
+| `←` / `→` | Перемотка −5 / +5 секунд |
 
 ## Управление через MPRIS2 (TODO)
 
