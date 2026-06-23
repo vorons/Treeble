@@ -1,13 +1,13 @@
 @import "tailwindcss";
 
 @theme {
-  --color-background: 0 0% 7%;
-  --color-foreground: 0 0% 93%;
-  --color-muted: 0 0% 15%;
-  --color-muted-foreground: 0 0% 63%;
-  --color-border: 0 0% 20%;
-  --color-primary: 142 72% 49%;
-  --color-primary-foreground: 0 0% 7%;
+  --color-background: hsl(0 0% 7%);
+  --color-foreground: hsl(0 0% 93%);
+  --color-muted: hsl(0 0% 15%);
+  --color-muted-foreground: hsl(0 0% 63%);
+  --color-border: hsl(0 0% 20%);
+  --color-primary: hsl(142 72% 49%);
+  --color-primary-foreground: hsl(0 0% 7%);
 }
 
 * {
