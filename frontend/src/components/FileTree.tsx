@@ -8,6 +8,8 @@ function TreeNode({ node, depth }: { node: FT; depth: number }) {
   const [expanded, setExpanded] = useState(false);
   const selectFolder = usePlayerStore((s) => s.selectFolder);
   const currentFolder = usePlayerStore((s) => s.currentFolder);
+  const currentQueueFolder = usePlayerStore((s) => s.currentQueueFolder);
+  const isQueueFolder = currentQueueFolder === node.path;
   const hasChildren = node.children.length > 0;
 
   const handleClick = () => {
@@ -22,19 +24,26 @@ function TreeNode({ node, depth }: { node: FT; depth: number }) {
         className={cn(
           "flex w-full items-center gap-1.5 px-2 py-1 text-left text-sm hover:bg-white/5 rounded transition-colors",
           currentFolder === node.path && "bg-primary/20 text-primary",
+          isQueueFolder && "font-medium",
         )}
         style={{ paddingLeft: `${12 + depth * 16}px` }}
       >
-        {hasChildren ? (
-          expanded ? (
-            <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
+        <span className={cn("flex items-center", !hasChildren && "invisible")}>
+          {expanded ? (
+            <ChevronDown className={cn("size-3.5 shrink-0", isQueueFolder ? "text-primary" : "text-muted-foreground")} />
           ) : (
-            <ChevronRight className="size-3.5 shrink-0 text-muted-foreground" />
-          )
+            <ChevronRight className={cn("size-3.5 shrink-0", isQueueFolder ? "text-primary" : "text-muted-foreground")} />
+          )}
+        </span>
+        {isQueueFolder ? (
+          <Music className="size-3.5 shrink-0 text-primary" />
         ) : (
-          <Music className="size-3.5 shrink-0 text-muted-foreground" />
+          <Folder className="size-3.5 shrink-0 text-muted-foreground" />
         )}
         <span className="truncate">{node.name}</span>
+        {isQueueFolder && hasChildren && (
+          <span className="size-1.5 rounded-full bg-primary shrink-0 ml-auto" />
+        )}
       </button>
       {expanded &&
         node.children.map((child) => (
