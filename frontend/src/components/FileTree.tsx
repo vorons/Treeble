@@ -3,6 +3,7 @@ import { usePlayerStore } from "@/stores/playerStore";
 import type { FolderTree as FT } from "@/lib/ipc";
 import { cn } from "@/lib/utils";
 import { ChevronRight, ChevronDown, Folder, Music } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 function TreeNode({ node, depth }: { node: FT; depth: number }) {
   const [expanded, setExpanded] = useState(false);
@@ -70,8 +71,10 @@ export default function FileTree() {
   }
 
   return (
-    <div className="h-full overflow-y-auto py-2">
-      <TreeNode node={tree} depth={0} />
-    </div>
+    <ScrollArea className="h-full">
+      <div className="py-2">
+        <TreeNode node={tree} depth={0} />
+      </div>
+    </ScrollArea>
   );
 }

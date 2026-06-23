@@ -8,6 +8,9 @@ import {
   Volume2,
   VolumeX,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 function fmtTime(sec: number): string {
   const m = Math.floor(sec / 60);
@@ -64,8 +67,8 @@ export default function PlayerBar() {
     setHoverSec(null);
   }, []);
 
-  const handleVolume = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const v = parseFloat(e.target.value);
+  const handleVolume = (value: number[]) => {
+    const v = value[0];
     setVol(v);
     setMuted(false);
     changeVolume(v);
@@ -80,22 +83,24 @@ export default function PlayerBar() {
     <div className="flex items-center gap-3 border-b border-border bg-black/30 px-4 py-2 shrink-0">
       {/* Controls */}
       <div className="flex items-center gap-1">
-        <button onClick={prev} className="p-1 hover:text-primary transition-colors">
+        <Button variant="ghost" size="icon" onClick={prev}>
           <SkipBack className="size-4" />
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="default"
+          size="icon"
           onClick={togglePause}
-          className="flex items-center justify-center size-7 rounded-full bg-primary text-primary-foreground hover:brightness-110 transition-all"
+          className="rounded-full"
         >
           {playing && !paused ? (
             <Pause className="size-3.5" />
           ) : (
             <Play className="size-3.5 ml-0.5" />
           )}
-        </button>
-        <button onClick={next} className="p-1 hover:text-primary transition-colors">
+        </Button>
+        <Button variant="ghost" size="icon" onClick={next}>
           <SkipForward className="size-4" />
-        </button>
+        </Button>
       </div>
 
       {/* Progress bar */}
@@ -107,45 +112,42 @@ export default function PlayerBar() {
         <span className="text-xs text-muted-foreground w-8 text-right tabular-nums shrink-0">
           {fmtTime(positionSec)}
         </span>
-        <div
-          ref={progressRef}
-          className="flex-1 h-1.5 bg-muted rounded-full cursor-pointer group"
-          onClick={handleProgressClick}
-        >
-          <div
-            className="h-full bg-primary rounded-full transition-[width] duration-100"
-            style={{ width: `${progressPct}%` }}
-          />
-        </div>
+        <Tooltip open={hoverSec !== null}>
+          <TooltipTrigger asChild>
+            <div
+              ref={progressRef}
+              className="flex-1 h-1.5 bg-muted rounded-full cursor-pointer group relative overflow-hidden"
+              onClick={handleProgressClick}
+            >
+              <div
+                className="h-full bg-primary rounded-full transition-[width] duration-100"
+                style={{ width: `${progressPct}%` }}
+              />
+            </div>
+          </TooltipTrigger>
+          <TooltipContent
+            side="top"
+            style={{ left: `${(hoverSec! / duration) * 100}%` }}
+          >
+            {fmtTime(hoverSec ?? 0)}
+          </TooltipContent>
+        </Tooltip>
         <span className="text-xs text-muted-foreground w-8 tabular-nums shrink-0">
           {fmtTime(duration)}
         </span>
-
-        {/* Hover tooltip */}
-        {hoverSec !== null && (
-          <div
-            className="absolute -top-7 -translate-x-1/2 bg-background text-foreground text-xs px-1.5 py-0.5 rounded border border-border whitespace-nowrap pointer-events-none z-10"
-            style={{ left: `${(hoverSec / duration) * 100}%` }}
-          >
-            {fmtTime(hoverSec)}
-          </div>
-        )}
       </div>
 
       {/* Volume */}
-      <div className="flex items-center gap-1 shrink-0">
-        <button onClick={toggleMute} className="p-1 hover:text-primary transition-colors">
+      <div className="flex items-center gap-2 shrink-0 w-24">
+        <Button variant="ghost" size="icon" onClick={toggleMute} className="size-8">
           {muted || vol === 0 ? <VolumeX className="size-4" /> : <Volume2 className="size-4" />}
-        </button>
-        <input
-          type="range"
-          min="0"
-          max="1"
-          step="0.01"
-          value={muted ? 0 : vol}
-          onChange={handleVolume}
-          className="w-16"
-          style={{ '--range-pct': `${(muted ? 0 : vol) * 100}%` } as React.CSSProperties}
+        </Button>
+        <Slider
+          value={[muted ? 0 : vol]}
+          min={0}
+          max={1}
+          step={0.01}
+          onValueChange={handleVolume}
         />
       </div>
     </div>

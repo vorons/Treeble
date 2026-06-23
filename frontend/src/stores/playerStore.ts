@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { getTree, getTracks, getState, playInFolder, play, pause, resume, nextTrack, prevTrack, seek, setVolume, audioEvent } from "@/lib/ipc";
 import type { Track, FolderTree, PlayerState } from "@/lib/ipc";
-import { useToastStore } from "@/stores/toastStore";
+import { toast } from "sonner";
 
 interface PlayerStore extends PlayerState {
   /** Folder tree root (loaded once at startup) */
@@ -50,7 +50,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
       set({ tree });
     } catch (e) {
       console.error("init():", e);
-      useToastStore.getState().addToast("Failed to load folder tree");
+      toast.error("Failed to load folder tree");
     }
   },
 
@@ -62,7 +62,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
       set({ currentFolder: dir, folderTracks: tracks });
     } catch (e) {
       console.error("selectFolder:", e);
-      useToastStore.getState().addToast("Failed to load tracks from this folder");
+      toast.error("Failed to load tracks from this folder");
     }
   },
 
@@ -83,7 +83,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
       });
     } catch (e) {
       console.error("playTrack:", e);
-      useToastStore.getState().addToast("Failed to play track");
+      toast.error("Failed to play track");
     }
   },
 
@@ -99,7 +99,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
       }
     } catch (e) {
       console.error("togglePause:", e);
-      useToastStore.getState().addToast("Failed to toggle playback");
+      toast.error("Failed to toggle playback");
     }
   },
 
@@ -128,7 +128,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
       }
     } catch (e) {
       console.error("next:", e);
-      useToastStore.getState().addToast("Failed to skip to next track");
+      toast.error("Failed to skip to next track");
     }
   },
 
@@ -157,7 +157,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
       }
     } catch (e) {
       console.error("prev:", e);
-      useToastStore.getState().addToast("Failed to skip to previous track");
+      toast.error("Failed to skip to previous track");
     }
   },
 
@@ -167,7 +167,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
       set({ positionSec: sec });
     } catch (e) {
       console.error("seekTo:", e);
-      useToastStore.getState().addToast("Failed to seek");
+      toast.error("Failed to seek");
     }
   },
 
@@ -176,7 +176,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
       await setVolume(vol);
     } catch (e) {
       console.error("changeVolume:", e);
-      useToastStore.getState().addToast("Failed to change volume");
+      toast.error("Failed to change volume");
     }
   },
 
@@ -223,7 +223,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
       }
     } catch (e) {
       console.error("onAudioEvent:", e);
-      useToastStore.getState().addToast("Playback error");
+      toast.error("Playback error");
     }
   },
 }));

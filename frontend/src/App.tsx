@@ -1,11 +1,12 @@
 import { useRef, useEffect, useCallback } from "react";
 import { usePlayerStore } from "@/stores/playerStore";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "@/components/ui/toaster";
 import TitleBar from "@/components/TitleBar";
 import FileTree from "@/components/FileTree";
 import TrackList from "@/components/TrackList";
 import PlayerBar from "@/components/PlayerBar";
 import StatusBar from "@/components/StatusBar";
-import ToastContainer from "@/components/Toast";
 
 export default function App() {
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -113,29 +114,31 @@ export default function App() {
   }, [onKeyDown]);
 
   return (
-    <div className="flex flex-col h-dvh">
-      <audio ref={audioRef} preload="auto" />
+    <TooltipProvider>
+      <div className="flex flex-col h-dvh">
+        <audio ref={audioRef} preload="auto" />
 
-      {/* Custom title bar */}
-      <TitleBar />
+        {/* Custom title bar */}
+        <TitleBar />
 
-      {/* Top bar: controls, progress, volume */}
-      <PlayerBar />
+        {/* Top bar: controls, progress, volume */}
+        <PlayerBar />
 
-      {/* Main area: sidebar + tracks */}
-      <div className="flex flex-1 min-h-0">
-        <aside className="w-56 shrink-0 border-r border-border overflow-hidden">
-          <FileTree />
-        </aside>
+        {/* Main area: sidebar + tracks */}
+        <div className="flex flex-1 min-h-0">
+          <aside className="w-56 shrink-0 border-r border-border overflow-hidden">
+            <FileTree />
+          </aside>
 
-        <main className="flex-1 overflow-hidden">
-          <TrackList />
-        </main>
+          <main className="flex-1 overflow-hidden">
+            <TrackList />
+          </main>
+        </div>
+
+        {/* Bottom status bar */}
+        <StatusBar />
+        <Toaster />
       </div>
-
-      {/* Bottom status bar */}
-      <StatusBar />
-      <ToastContainer />
-    </div>
+    </TooltipProvider>
   );
 }

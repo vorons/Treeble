@@ -2,6 +2,8 @@ import { useEffect, useRef, useMemo } from "react";
 import { usePlayerStore } from "@/stores/playerStore";
 import { cn } from "@/lib/utils";
 import { Play, Pause, Music } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Track } from "@/lib/ipc";
 
 function fmtDuration(sec: number): string {
@@ -20,7 +22,6 @@ export default function TrackList() {
   const currentQueueFolder = usePlayerStore((s) => s.currentQueueFolder);
   const sortField = usePlayerStore((s) => s.sortField);
   const sortDir = usePlayerStore((s) => s.sortDir);
-  const selectFolder = usePlayerStore((s) => s.selectFolder);
   const playTrack = usePlayerStore((s) => s.playTrack);
   const togglePause = usePlayerStore((s) => s.togglePause);
   const activeRef = useRef<HTMLDivElement>(null);
@@ -64,69 +65,72 @@ export default function TrackList() {
   }
 
   const isCurrentTrack = (track: Track) => {
-    // Only highlight if the visible folder is the same as the queue's folder
     if (queue.length === 0 || currentFolder !== currentQueueFolder) return false;
     return queue[currentIndex]?.path === track.path;
   };
 
   return (
-    <div className="h-full overflow-y-auto divide-y divide-border">
-      {folderTracks.length === 0 && (
-        <div className="p-4 text-sm text-muted-foreground">
-          No audio files in this folder.
-        </div>
-      )}
-      {sortedTracks.map((track) => {
-        const active = isCurrentTrack(track);
-        const origIdx = folderTracks.indexOf(track);
-        return (
-          <div
-            key={track.path}
-            ref={active ? activeRef : undefined}
-            className={cn(
-              "group flex items-center gap-3 px-4 py-2 hover:bg-white/5 cursor-pointer transition-colors",
-              active && "bg-primary/10",
-            )}
-            onDoubleClick={() => playTrack(origIdx)}
-          >
-            {/* Play button */}
-            <button
-              onClick={() =>
-                active && playing ? togglePause() : playTrack(origIdx)
-              }
-              className="size-6 shrink-0 flex items-center justify-center"
-            >
-              {active && playing && !paused ? (
-                <Pause className="size-3.5 text-primary" />
-              ) : (
-                <Play className="size-3.5 text-muted-foreground group-hover:text-foreground" />
-              )}
-            </button>
-
-            {/* Info */}
-            <div className="flex-1 min-w-0">
-              <div
-                className={cn(
-                  "truncate text-sm",
-                  active && "text-primary font-medium",
-                )}
-              >
-                {track.title}
-              </div>
-              {track.artist && (
-                <div className="truncate text-xs text-muted-foreground">
-                  {track.artist}
-                </div>
-              )}
-            </div>
-
-            {/* Duration */}
-            <span className="text-xs text-muted-foreground shrink-0">
-              {fmtDuration(track.durationSec)}
-            </span>
+    <ScrollArea className="h-full">
+      <div className="divide-y divide-border">
+        {folderTracks.length === 0 && (
+          <div className="p-4 text-sm text-muted-foreground">
+            No audio files in this folder.
           </div>
-        );
-      })}
-    </div>
+        )}
+        {sortedTracks.map((track) => {
+          const active = isCurrentTrack(track);
+          const origIdx = folderTracks.indexOf(track);
+          return (
+            <div
+              key={track.path}
+              ref={active ? activeRef : undefined}
+              className={cn(
+                "group flex items-center gap-3 px-4 py-2 hover:bg-white/5 cursor-pointer transition-colors",
+                active && "bg-primary/10",
+              )}
+              onDoubleClick={() => playTrack(origIdx)}
+            >
+              {/* Play button */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-6 shrink-0"
+                onClick={() =>
+                  active && playing ? togglePause() : playTrack(origIdx)
+                }
+              >
+                {active && playing && !paused ? (
+                  <Pause className="size-3.5 text-primary" />
+                ) : (
+                  <Play className="size-3.5 text-muted-foreground group-hover:text-foreground" />
+                )}
+              </Button>
+
+              {/* Info */}
+              <div className="flex-1 min-w-0">
+                <div
+                  className={cn(
+                    "truncate text-sm",
+                    active && "text-primary font-medium",
+                  )}
+                >
+                  {track.title}
+                </div>
+                {track.artist && (
+                  <div className="truncate text-xs text-muted-foreground">
+                    {track.artist}
+                  </div>
+                )}
+              </div>
+
+              {/* Duration */}
+              <span className="text-xs text-muted-foreground shrink-0">
+                {fmtDuration(track.durationSec)}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </ScrollArea>
   );
 }

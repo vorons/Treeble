@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { Minus, Square, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   windowMinimize,
   windowMaximizeRestore,
@@ -27,27 +28,33 @@ export default function TitleBar() {
 
       {/* Window controls */}
       <div className="flex h-full">
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={() => windowMinimize()}
-          className="px-3 h-full hover:bg-white/10 transition-colors text-muted-foreground hover:text-foreground"
+          className="h-full rounded-none px-3"
           aria-label="Minimize"
         >
           <Minus className="size-3.5" />
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={() => handleMaxRestore()}
-          className="px-3 h-full hover:bg-white/10 transition-colors text-muted-foreground hover:text-foreground"
+          className="h-full rounded-none px-3"
           aria-label={maximized ? "Restore" : "Maximize"}
         >
           <Square className="size-3" />
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={() => windowClose()}
-          className="px-3 h-full hover:bg-red-500/80 hover:text-white transition-colors text-muted-foreground"
+          className="h-full rounded-none px-3 hover:bg-red-500/80 hover:text-white"
           aria-label="Close"
         >
           <X className="size-3.5" />
-        </button>
+        </Button>
       </div>
     </div>
   );
