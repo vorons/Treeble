@@ -2,6 +2,7 @@ import { useEffect, useRef, useMemo } from "react";
 import { usePlayerStore } from "@/stores/playerStore";
 import { cn } from "@/lib/utils";
 import { Play, Pause, Music } from "lucide-react";
+import type { Track } from "@/lib/ipc";
 
 function fmtDuration(sec: number): string {
   const m = Math.floor(sec / 60);
@@ -29,6 +30,18 @@ export default function TrackList() {
     activeRef.current?.scrollIntoView({ block: "nearest" });
   }, [currentIndex]);
 
+  const sortedTracks = useMemo(() => {
+    if (!sortField) return folderTracks;
+    const sorted = [...folderTracks].sort((a, b) => {
+      const aVal = sortField === 'title' ? a.title : a.durationSec;
+      const bVal = sortField === 'title' ? b.title : b.durationSec;
+      if (aVal < bVal) return -1;
+      if (aVal > bVal) return 1;
+      return 0;
+    });
+    return sortDir === 'desc' ? sorted.reverse() : sorted;
+  }, [folderTracks, sortField, sortDir]);
+
   if (!currentFolder) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-5 select-none">
@@ -50,23 +63,11 @@ export default function TrackList() {
     );
   }
 
-  const isCurrentTrack = (idx: number) => {
+  const isCurrentTrack = (track: Track) => {
     // Only highlight if the visible folder is the same as the queue's folder
     if (queue.length === 0 || currentFolder !== currentQueueFolder) return false;
-    return idx === currentIndex;
+    return queue[currentIndex]?.path === track.path;
   };
-
-  const sortedTracks = useMemo(() => {
-    if (!sortField) return folderTracks;
-    const sorted = [...folderTracks].sort((a, b) => {
-      const aVal = sortField === 'title' ? a.title : a.durationSec;
-      const bVal = sortField === 'title' ? b.title : b.durationSec;
-      if (aVal < bVal) return -1;
-      if (aVal > bVal) return 1;
-      return 0;
-    });
-    return sortDir === 'desc' ? sorted.reverse() : sorted;
-  }, [folderTracks, sortField, sortDir]);
 
   return (
     <div className="h-full overflow-y-auto divide-y divide-border">
@@ -75,8 +76,9 @@ export default function TrackList() {
           No audio files in this folder.
         </div>
       )}
-      {sortedTracks.map((track, idx) => {
-        const active = isCurrentTrack(idx);
+      {sortedTracks.map((track) => {
+        const active = isCurrentTrack(track);
+        const origIdx = folderTracks.indexOf(track);
         return (
           <div
             key={track.path}
@@ -85,12 +87,12 @@ export default function TrackList() {
               "group flex items-center gap-3 px-4 py-2 hover:bg-white/5 cursor-pointer transition-colors",
               active && "bg-primary/10",
             )}
-            onDoubleClick={() => playTrack(idx)}
+            onDoubleClick={() => playTrack(origIdx)}
           >
             {/* Play button */}
             <button
               onClick={() =>
-                active && playing ? togglePause() : playTrack(idx)
+                active && playing ? togglePause() : playTrack(origIdx)
               }
               className="size-6 shrink-0 flex items-center justify-center"
             >
