@@ -42,6 +42,9 @@ interface PlayerStore {
   muted: boolean;
   _preMuteVolume: number;
 
+  // ── Window (persisted) ──
+  maximized: boolean;
+
   // ── Tree expansion (persisted) ──
   expandedPaths: Set<string>;
 
@@ -55,6 +58,7 @@ interface PlayerStore {
   next: () => Promise<void>;
   prev: () => Promise<void>;
   seekTo: (sec: number) => Promise<void>;
+  setMaximized: (val: boolean) => void;
   toggleMute: () => void;
   changeVolume: (vol: number) => Promise<void>;
   setExpanded: (path: string, expanded: boolean) => void;
@@ -82,6 +86,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
   volume: 0.7,
   muted: false,
   _preMuteVolume: 0.7,
+  maximized: false,
   expandedPaths: new Set<string>(),
 
   // ── Init ──────────────────────────────────────────────────────────────────
@@ -313,6 +318,10 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
     }
   },
 
+  setMaximized: (val: boolean) => {
+    set({ maximized: val });
+  },
+
   setExpanded: (path: string, expanded: boolean) => {
     const { expandedPaths } = get();
     const next = new Set(expandedPaths);
@@ -427,6 +436,10 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
       // (no IPC needed for these — they're frontend-only state)
 
       // Load last folder
+      if (s.maximized) {
+        set({ maximized: true });
+      }
+
       if (lastFolder) {
         const tracks = await getTracks(lastFolder);
         set({

@@ -102,6 +102,7 @@ export interface SavedState {
   volume: number;
   repeatMode: string;
   shuffle: boolean;
+  maximized: boolean;
 }
 
 /** Retrieve saved state from disk. */

@@ -28,12 +28,13 @@ function fmtTime(sec: number): string {
 
 export default function HeaderBar() {
   // ── Window state ──
-  const [maximized, setMaximized] = useState(false);
+  const maximized = usePlayerStore((s) => s.maximized);
+  const setStoreMaximized = usePlayerStore((s) => s.setMaximized);
 
   const handleMaxRestore = useCallback(async () => {
     const next = await windowMaximizeRestore();
-    setMaximized(next);
-  }, []);
+    setStoreMaximized(next);
+  }, [setStoreMaximized]);
 
   // ── Player state ──
   const playing = usePlayerStore((s) => s.playing);

@@ -74,6 +74,7 @@ static std::string serialize_state(const SavedState &s)
         "\"lastTrackIndex\":" + std::to_string(s.lastTrackIndex) + ","
         "\"volume\":" + fmt_double(s.volume) + ","
         "\"repeatMode\":\"" + json_escape(s.repeatMode) + "\","
+        "\"maximized\":" + (s.maximized ? "true" : "false") + ","
         "\"shuffle\":" + (s.shuffle ? "true" : "false") +
         "}";
 }
@@ -161,6 +162,7 @@ static SavedState parse_state(const std::string &json)
     s.repeatMode    = find("repeatMode");
     if (s.repeatMode.empty()) s.repeatMode = "off";
     s.shuffle       = b("shuffle", false);
+    s.maximized     = b("maximized", false);
     return s;
 }
 
@@ -200,6 +202,7 @@ struct SavedStateView
     int windowY{};
     int windowW{};
     int windowH{};
+    bool maximized{};
     std::string lastFolder;
     int lastTrackIndex{};
     double volume{0.7};
@@ -214,7 +217,7 @@ static TrackView to_view(const Track &t)
 
 static SavedStateView to_view(const SavedState &s)
 {
-    return {s.windowX, s.windowY, s.windowW, s.windowH,
+    return {s.windowX, s.windowY, s.windowW, s.windowH, s.maximized,
             s.lastFolder, s.lastTrackIndex,
             s.volume, s.repeatMode, s.shuffle};
 }
@@ -438,12 +441,13 @@ void IPCHandler::exposeSaveStateIPC()
         m_lastSaved.volume         = volume;
         m_lastSaved.repeatMode     = repeatMode;
         m_lastSaved.shuffle        = shuffle;
-        // Take window geometry from current window
+        // Take window geometry and maximized state from current window
         auto &win = m_wv.parent();
         m_lastSaved.windowX = win.position().x;
         m_lastSaved.windowY = win.position().y;
         m_lastSaved.windowW = win.size().w;
         m_lastSaved.windowH = win.size().h;
+        m_lastSaved.maximized = win.maximized();
         saveState(m_lastSaved);
     });
 }
@@ -455,5 +459,6 @@ void IPCHandler::saveStateOnExit()
     m_lastSaved.windowY = win.position().y;
     m_lastSaved.windowW = win.size().w;
     m_lastSaved.windowH = win.size().h;
+    m_lastSaved.maximized = win.maximized();
     saveState(m_lastSaved);
 }

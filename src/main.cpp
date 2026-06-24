@@ -100,6 +100,10 @@ coco::stray start(saucer::application *app)
             window->set_size({.w = saved.windowW, .h = saved.windowH});
             window->set_position({.x = saved.windowX, .y = saved.windowY});
         }
+        if (saved.maximized)
+        {
+            window->set_maximized(true);
+        }
         // Save state on window close
         window->on<saucer::window::event::close>([&ipc]() -> saucer::policy
         {

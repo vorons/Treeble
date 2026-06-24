@@ -42,6 +42,7 @@ struct SavedState
     int windowY{};
     int windowW{};
     int windowH{};
+    bool maximized{};
     std::string lastFolder;
     int lastTrackIndex{};
     double volume{0.7};
