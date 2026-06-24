@@ -12,7 +12,7 @@ export default defineConfig({
   },
   // Treeble embeds dist/ into the binary; no need for code splitting
   build: {
-    // @ts-expect-error Vite 8 types lack codeSplitting but it exists at runtime
+    // Vite 8 has codeSplitting at runtime but types don't reflect it yet
     codeSplitting: false,
-  },
+  } as any,
 });

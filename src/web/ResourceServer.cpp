@@ -8,6 +8,7 @@
 #include <cstring>
 #include <cstdlib>
 #include <algorithm>
+#include <charconv>
 #include <cerrno>
 #include <functional>
 
@@ -129,7 +130,8 @@ void ResourceServer::on_request(_SoupServer * /*server*/,
     // Only absolute paths (starting with /) are valid; reject any containing ..
     if (file_path.empty() || file_path[0] != '/' ||
         file_path.find("/../") != std::string::npos ||
-        file_path.rfind("/..", 0) == 0 || file_path == "..")
+        file_path.rfind("/..", 0) == 0 || file_path == ".." ||
+        file_path.ends_with("/.."))
     {
         std::fprintf(stderr, "[ResourceServer] path traversal rejected: %s\n", file_path.c_str());
         soup_server_message_set_status(msg, SOUP_STATUS_FORBIDDEN, nullptr);
@@ -181,13 +183,32 @@ void ResourceServer::on_request(_SoupServer * /*server*/,
             {
                 auto start_str = rv.substr(0, dash);
                 auto end_str   = rv.substr(dash + 1);
+
+                bool parse_ok = true;
                 if (!start_str.empty())
-                    range_start = static_cast<std::size_t>(std::stoll(std::string(start_str)));
+                {
+                    long long val{};
+                    auto [ptr, ec] = std::from_chars(start_str.data(), start_str.data() + start_str.size(), val);
+                    if (ec == std::errc{})
+                        range_start = static_cast<std::size_t>(val);
+                    else
+                        parse_ok = false;
+                }
                 if (!end_str.empty())
-                    range_end = static_cast<std::size_t>(std::stoll(std::string(end_str)));
-                if (range_end >= file_size)
-                    range_end = file_size - 1;
-                has_range = true;
+                {
+                    long long val{};
+                    auto [ptr, ec] = std::from_chars(end_str.data(), end_str.data() + end_str.size(), val);
+                    if (ec == std::errc{})
+                        range_end = static_cast<std::size_t>(val);
+                    else
+                        parse_ok = false;
+                }
+                if (parse_ok)
+                {
+                    if (range_end >= file_size)
+                        range_end = file_size - 1;
+                    has_range = true;
+                }
             }
         }
     }

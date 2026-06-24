@@ -1,0 +1,18 @@
+{
+  "id": "f_20260624165001_3627",
+  "feature": "frontend:build",
+  "title": "vite.config.ts uses @ts-expect-error for codeSplitting — fragile on Vite upgrades",
+  "severity": "low",
+  "status": "fixed",
+  "path": "frontend/vite.config.ts:12",
+  "evidence": "// @ts-expect-error Vite 8 types lack codeSplitting but it exists at runtime codeSplitting: false,",
+  "suggestion": "Suppress with a type assertion instead: (build as any).codeSplitting = false; or define the option in a separate config object with index signature. At minimum document which Vite version this was tested with.",
+  "created_at": "2026-06-24T16:50:01.75018542Z",
+  "updated_at": "2026-06-24T16:54:18.945603092Z",
+  "notes": [
+    {
+      "at": "2026-06-24T16:54:18.945603172Z",
+      "text": "Cast build config object to any instead of @ts-expect-error. TypeScript compiles cleanly, no suppressed errors."
+    }
+  ]
+}

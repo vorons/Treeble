@@ -584,12 +584,14 @@ static IconPaths write_icons()
     auto icon_bw = base + "/treeble.png";
     auto icon_ac = base + "/treeble-active.png";
 
-    g_file_set_contents(icon_bw.c_str(),
-                         reinterpret_cast<const char *>(s_tray_icon_bw),
-                         s_tray_icon_bw_size, nullptr);
-    g_file_set_contents(icon_ac.c_str(),
-                         reinterpret_cast<const char *>(s_tray_icon_active),
-                         s_tray_icon_active_size, nullptr);
+    if (!g_file_test(icon_bw.c_str(), G_FILE_TEST_EXISTS))
+        g_file_set_contents(icon_bw.c_str(),
+                             reinterpret_cast<const char *>(s_tray_icon_bw),
+                             s_tray_icon_bw_size, nullptr);
+    if (!g_file_test(icon_ac.c_str(), G_FILE_TEST_EXISTS))
+        g_file_set_contents(icon_ac.c_str(),
+                             reinterpret_cast<const char *>(s_tray_icon_active),
+                             s_tray_icon_active_size, nullptr);
 
     return {icon_bw, icon_ac};
 }

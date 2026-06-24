@@ -1,0 +1,18 @@
+{
+  "id": "f_20260624165001_9243",
+  "feature": "cpp:tray",
+  "title": "Tray icons unconditionally written to disk every startup (regression)",
+  "severity": "low",
+  "status": "fixed",
+  "path": "src/tray/SystemTray.cpp:587-591",
+  "evidence": "g_file_set_contents(icon_bw.c_str(), …); g_file_set_contents(icon_ac.c_str(), …); — called unconditionally in write_icons(), no g_file_test check. Previously fixed in commit cd82035 but reverted in 4d8f579 when icons were rewritten.",
+  "suggestion": "Check if icon files exist and have correct size before writing, or write a stamp file. Avoids unnecessary disk writes on every startup.",
+  "created_at": "2026-06-24T16:50:01.750051126Z",
+  "updated_at": "2026-06-24T16:54:18.945433852Z",
+  "notes": [
+    {
+      "at": "2026-06-24T16:54:18.945433962Z",
+      "text": "Added g_file_test(G_FILE_TEST_EXISTS) guards before each g_file_set_contents call in write_icons(). Skips write if icon already on disk."
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "id": "f_20260624165001_7568",
+  "feature": "cpp:web/resource-server",
+  "title": "ResourceServer: std::stoll on Range header throws through C callback boundary",
+  "severity": "high",
+  "status": "fixed",
+  "path": "src/web/ResourceServer.cpp:185-187",
+  "evidence": "range_start = static_cast\u003cstd::size_t\u003e(std::stoll(std::string(start_str))); range_end = static_cast\u003cstd::size_t\u003e(std::stoll(std::string(end_str))); — no try-catch, called inside a SoupServerCallback (C callback).",
+  "suggestion": "Wrap in try-catch. If std::stoll throws, respond with 400 Bad Request and return. Or use std::from_chars (already used for volume parsing) which doesn't throw.",
+  "created_at": "2026-06-24T16:50:01.749611134Z",
+  "updated_at": "2026-06-24T16:54:18.944968682Z",
+  "notes": [
+    {
+      "at": "2026-06-24T16:54:18.944968782Z",
+      "text": "Replaced std::stoll with std::from_chars in Range header parsing. Malformed ranges now silently fall back to serving the full file instead of crashing."
+    }
+  ]
+}

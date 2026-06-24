@@ -1,0 +1,18 @@
+{
+  "id": "f_20260624165001_3459",
+  "feature": "cpp:web/resource-server",
+  "title": "ResourceServer path-traversal check misses trailing /.. at end of path",
+  "severity": "low",
+  "status": "fixed",
+  "path": "src/web/ResourceServer.cpp:133-134",
+  "evidence": "file_path.find(\"/../\") != std::string::npos || file_path.rfind(\"/..\", 0) == 0 — checks for /../ in the middle and /.. at start, but /valid/path/.. (ending with /..) passes both checks. The file resolves one directory up.",
+  "suggestion": "Add check for file_path.ends_with(\"/..\") after the existing checks, or check file_path.find(\"/..\") != std::string::npos (though this would reject legitimate paths containing .. in directory names). Low priority since all audio paths come from FileScanner.",
+  "created_at": "2026-06-24T16:50:01.750345313Z",
+  "updated_at": "2026-06-24T16:54:18.945778734Z",
+  "notes": [
+    {
+      "at": "2026-06-24T16:54:18.945778815Z",
+      "text": "Added file_path.ends_with(\"/..\") check to path-traversal filter. Catches paths ending with /.. that previously passed the existing checks."
+    }
+  ]
+}

@@ -128,7 +128,12 @@ static SavedState parse_state(const std::string &json)
     auto n = [&](const std::string &key, int def) -> int
     {
         auto v = find(key);
-        return v.empty() ? def : std::stoi(v);
+        if (v.empty()) return def;
+        int result{};
+        auto [ptr, ec] = std::from_chars(v.data(), v.data() + v.size(), result);
+        if (ec == std::errc{})
+            return result;
+        return def;
     };
     auto d = [&](const std::string &key, double def) -> double
     {
