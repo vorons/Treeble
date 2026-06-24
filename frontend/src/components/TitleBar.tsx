@@ -17,44 +17,38 @@ export default function TitleBar() {
   }, []);
 
   return (
-    <div className="flex items-center justify-between h-9 shrink-0 bg-black/40 select-none">
-      {/* Drag region — spans the full height, buttons are excluded via grid */}
+    <div className="flex items-center justify-between shrink-0 bg-black/30 select-none py-1">
+      {/* Drag region */}
       <span
-        className="flex-1 self-stretch flex items-center px-3 text-xs text-muted-foreground font-medium tracking-wide"
+        className="flex-1 self-stretch flex items-center px-3 text-[11px] text-muted-foreground/50 font-mono tracking-wider"
         onMouseDown={() => windowStartDrag()}
       >
         Treeble
       </span>
 
       {/* Window controls */}
-      <div className="flex h-full">
-        <Button
-          variant="ghost"
-          size="icon"
+      <div className="flex items-center h-full gap-0.5 pr-1">
+        <button
           onClick={() => windowMinimize()}
-          className="h-full rounded-none px-3"
+          className="flex items-center justify-center size-6 rounded hover:bg-white/[0.06] transition-colors text-muted-foreground/60 hover:text-foreground/80"
           aria-label="Minimize"
         >
-          <Minus className="size-3.5" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
+          <Minus className="size-3" />
+        </button>
+        <button
           onClick={() => handleMaxRestore()}
-          className="h-full rounded-none px-3"
+          className="flex items-center justify-center size-6 rounded hover:bg-white/[0.06] transition-colors text-muted-foreground/60 hover:text-foreground/80"
           aria-label={maximized ? "Restore" : "Maximize"}
         >
-          <Square className="size-3" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
+          <Square className="size-2.5" />
+        </button>
+        <button
           onClick={() => windowClose()}
-          className="h-full rounded-none px-3 hover:bg-red-500/80 hover:text-white"
+          className="flex items-center justify-center size-6 rounded hover:bg-red-500/70 hover:text-white transition-colors text-muted-foreground/60"
           aria-label="Close"
         >
-          <X className="size-3.5" />
-        </Button>
+          <X className="size-3" />
+        </button>
       </div>
     </div>
   );

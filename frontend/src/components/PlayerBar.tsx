@@ -80,7 +80,7 @@ export default function PlayerBar() {
   };
 
   return (
-    <div className="flex items-center gap-3 border-b border-border bg-black/30 px-4 py-2 shrink-0">
+    <div className="flex items-center gap-3 bg-black/30 px-4 py-2 shrink-0">
       {/* Controls */}
       <div className="flex items-center gap-1">
         <Button variant="ghost" size="icon" onClick={prev}>
