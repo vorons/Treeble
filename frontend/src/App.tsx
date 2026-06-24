@@ -66,9 +66,6 @@ export default function App() {
       setVolume: (vol: number) => { el.volume = vol; },
     };
 
-    // Sync initial volume to match the slider default (0.7)
-    el.volume = 0.7;
-
     return () => {
       delete (window as unknown as Record<string, unknown>).audioPlayer;
     };

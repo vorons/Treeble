@@ -26,6 +26,7 @@ export default function PlayerBar() {
   const volume = usePlayerStore((s) => s.volume);
 
   const togglePause = usePlayerStore((s) => s.togglePause);
+  const playTrack = usePlayerStore((s) => s.playTrack);
   const next = usePlayerStore((s) => s.next);
   const prev = usePlayerStore((s) => s.prev);
   const seekTo = usePlayerStore((s) => s.seekTo);
@@ -88,7 +89,7 @@ export default function PlayerBar() {
         <Button
           variant="default"
           size="icon"
-          onClick={togglePause}
+          onClick={playing ? togglePause : () => playTrack(currentIndex)}
           className="rounded-full transition-all duration-150 hover:shadow-[0_0_14px_-2px_hsl(28,80%,52%,0.45)] active:scale-95"
         >
           {playing && !paused ? (
