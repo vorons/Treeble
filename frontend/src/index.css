@@ -37,10 +37,4 @@ body {
   overflow: hidden;
 }
 
-/* ponytail: promote Radix scroll-area viewport to its own GPU compositor
-   layer so WebKit doesn't sample text at fractional offsets during scroll,
-   which causes blurry text on WebKitGTK. */
-[data-radix-scroll-area-viewport] {
-  will-change: transform;
-  -webkit-font-smoothing: antialiased;
-}
+
