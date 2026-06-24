@@ -11,6 +11,7 @@
 #include <fstream>
 #include <cstdlib>
 #include <filesystem>
+#include <charconv>
 
 // ── persistent state helpers ───────────────────────────────────────────────
 namespace fs = std::filesystem;
@@ -131,12 +132,18 @@ static SavedState parse_state(const std::string &json)
     auto d = [&](const std::string &key, double def) -> double
     {
         auto v = find(key);
+        std::fprintf(stderr, "[state] parse key='%s' found='%s'\n", key.c_str(), v.c_str());
         if (v.empty()) return def;
         // Normalize decimal separator: some locales may have produced ','
         for (auto &ch : v)
             if (ch == ',')
                 ch = '.';
-        return std::stod(v);
+        // std::stod is locale-dependent; use from_chars which is not
+        double result{};
+        auto [ptr, ec] = std::from_chars(v.data(), v.data() + v.size(), result);
+        if (ec == std::errc{})
+            return result;
+        return def;
     };
     auto b = [&](const std::string &key, bool def) -> bool
     {
@@ -377,7 +384,9 @@ IPCHandler::IPCHandler(saucer::smartview &wv, FileScanner &fs, TagReader &tr,
     // Frontend calls this once at startup to get saved state
     wv.expose("loadState", [this]() -> SavedStateView
     {
-        return to_view(loadState());
+        auto saved = loadState();
+        std::fprintf(stderr, "[state] loadState IPC returning volume=%.2f\n", saved.volume);
+        return to_view(saved);
     });
 }
 
@@ -386,10 +395,16 @@ SavedState IPCHandler::loadState()
     auto path = state_path();
     std::ifstream f(path);
     if (!f.is_open())
+    {
+        std::fprintf(stderr, "[state] no file, returning defaults\n");
         return {};
+    }
     std::string json((std::istreambuf_iterator<char>(f)),
                       std::istreambuf_iterator<char>());
-    return parse_state(json);
+    std::fprintf(stderr, "[state] read file: %s\n", json.c_str());
+    auto s = parse_state(json);
+    std::fprintf(stderr, "[state] parsed volume=%.2f\n", s.volume);
+    return s;
 }
 
 void IPCHandler::saveState(const SavedState &s)
@@ -417,6 +432,7 @@ void IPCHandler::exposeSaveStateIPC()
         const std::string &repeatMode,
         bool shuffle)
     {
+        std::fprintf(stderr, "[state] IPC saveState volume=%.2f\n", volume);
         m_lastSaved.lastFolder     = lastFolder;
         m_lastSaved.lastTrackIndex = lastTrackIndex;
         m_lastSaved.volume         = volume;

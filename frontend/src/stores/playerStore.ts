@@ -372,6 +372,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
   // ── State persistence ────────────────────────────────────────────────────
   _saveState: async () => {
     const { currentFolder, currentQueueFolder, currentIndex, volume, repeatMode, shuffle } = get();
+    console.log("[state] _saveState volume:", volume);
     try {
       await saveState(
         currentFolder ?? "",
@@ -388,12 +389,14 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
   _loadAndApplyState: async () => {
     try {
       const s = await loadState();
+      console.log("[state] loadState returned:", JSON.stringify(s));
       if (!s) return;
       const lastFolder = s.lastFolder ?? "";
       const lastTrackIndex = s.lastTrackIndex ?? 0;
       const volume = s.volume ?? 0.7;
       const repeatMode = s.repeatMode ?? "off";
       const shuffle = s.shuffle ?? false;
+      console.log("[state] applying volume:", volume);
 
       // Apply volume
       set({ volume, repeatMode: repeatMode as RepeatMode, shuffle });
