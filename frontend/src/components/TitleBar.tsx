@@ -29,24 +29,24 @@ export default function TitleBar() {
       <div className="flex items-center h-full gap-0.5 pr-1">
         <button
           onClick={() => windowMinimize()}
-          className="flex items-center justify-center size-6 rounded hover:bg-white/[0.06] transition-colors text-muted-foreground/60 hover:text-foreground/80"
+          className="flex items-center justify-center size-8 rounded hover:bg-white/[0.06] transition-colors text-muted-foreground/60 hover:text-foreground/80"
           aria-label="Minimize"
         >
-          <Minus className="size-3" />
+          <Minus className="size-3.5" />
         </button>
         <button
           onClick={() => handleMaxRestore()}
-          className="flex items-center justify-center size-6 rounded hover:bg-white/[0.06] transition-colors text-muted-foreground/60 hover:text-foreground/80"
+          className="flex items-center justify-center size-8 rounded hover:bg-white/[0.06] transition-colors text-muted-foreground/60 hover:text-foreground/80"
           aria-label={maximized ? "Restore" : "Maximize"}
         >
-          <Square className="size-2.5" />
+          <Square className="size-3" />
         </button>
         <button
           onClick={() => windowClose()}
-          className="flex items-center justify-center size-6 rounded hover:bg-red-500/70 hover:text-white transition-colors text-muted-foreground/60"
+          className="flex items-center justify-center size-8 rounded hover:bg-red-500/70 hover:text-white transition-colors text-muted-foreground/60"
           aria-label="Close"
         >
-          <X className="size-3" />
+          <X className="size-3.5" />
         </button>
       </div>
     </div>
