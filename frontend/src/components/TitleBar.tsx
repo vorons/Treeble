@@ -1,6 +1,5 @@
 import { useState, useCallback } from "react";
 import { Minus, Square, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import {
   windowMinimize,
   windowMaximizeRestore,
