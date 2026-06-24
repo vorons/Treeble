@@ -95,14 +95,12 @@ coco::stray start(saucer::application *app)
     // ── restore saved state ───────────────────────────────────────────────
     {
         auto saved = ipc.loadState();
-        if (saved.windowW > 0 && saved.windowH > 0)
+        // Only restore size/position when NOT maximized — otherwise we'd
+        // overwrite the window-manager's normal-size memory with screen size.
+        if (!saved.maximized && saved.windowW > 0 && saved.windowH > 0)
         {
             window->set_size({.w = saved.windowW, .h = saved.windowH});
             window->set_position({.x = saved.windowX, .y = saved.windowY});
-        }
-        if (saved.maximized)
-        {
-            window->set_maximized(true);
         }
         // Save state on window close
         window->on<saucer::window::event::close>([&ipc]() -> saucer::policy
@@ -110,6 +108,13 @@ coco::stray start(saucer::application *app)
             ipc.saveStateOnExit();
             // ponytail: always allow close
             return saucer::policy::allow;
+        });
+
+        // Persist maximized state immediately when it changes
+        window->on<saucer::window::event::maximize>([&ipc](bool /*maximized*/)
+        {
+            // Triggers IPC saveState which captures win.maximized()
+            ipc.saveStateOnExit();
         });
     }
 
@@ -131,6 +136,13 @@ coco::stray start(saucer::application *app)
     webview->serve("/index.html");
 
     window->show();
+
+    // Restore maximized state AFTER show() — some window managers
+    // ignore set_maximized() before the window is mapped.
+    if (auto saved = ipc.loadState(); saved.maximized)
+    {
+        window->set_maximized(true);
+    }
 
     // ── run ───────────────────────────────────────────────────────────────
     co_await app->finish();
