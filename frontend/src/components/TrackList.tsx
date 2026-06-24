@@ -73,7 +73,7 @@ export default function TrackList() {
               className={cn(
                 "group flex items-center gap-3 px-4 py-2 hover:bg-amber-500/5 cursor-pointer transition-colors border-l-2",
                 active && !paused && "border-primary bg-amber-500/[0.03]",
-                active && paused && "border-dashed border-primary/70 bg-amber-500/[0.03]",
+                active && paused && "border-primary/70 bg-amber-500/[0.03]",
                 !active && "border-transparent",
               )}
               onDoubleClick={() => playTrack(origIdx)}

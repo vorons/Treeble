@@ -85,15 +85,15 @@ coco::stray start(saucer::application *app)
     TagReader         tag_reader;
     PlayerState       state;
     WebViewAudioBackend audio(*webview);
-    // ResourceServer already owns the HTTP server; register with IPC
-    IPCHandler        ipc(*webview, scanner, tag_reader, audio, state);
 
-    // ── system tray icon ─────────────────────────────────────────────────
+    // ── system tray icon (must be before IPC handler) ────────────────────
     SystemTray        tray(app, *window);
+
+    // ResourceServer already owns the HTTP server; register with IPC
+    IPCHandler        ipc(*webview, scanner, tag_reader, audio, state, tray);
 
     // ── embedded frontend ─────────────────────────────────────────────────
     webview->embed(saucer::embedded::all());
-    webview->set_dev_tools(true);
 
     // ── inject audio base URL into JS ─────────────────────────────────────
     // This must be done BEFORE serving the page, so the frontend has it

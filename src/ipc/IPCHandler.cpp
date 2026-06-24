@@ -3,6 +3,7 @@
 #include "fs/FileScanner.h"
 #include "metadata/TagReader.h"
 #include "audio/WebViewAudioBackend.h"
+#include "tray/SystemTray.h"
 
 #include <saucer/smartview.hpp>
 #include <algorithm>
@@ -45,8 +46,9 @@ static TrackView to_view(const Track &t)
 
 // ── constructor ─────────────────────────────────────────────────────────────
 IPCHandler::IPCHandler(saucer::smartview &wv, FileScanner &fs, TagReader &tr,
-                       WebViewAudioBackend &ab, PlayerState &state)
-    : m_wv(wv), m_fs(fs), m_tr(tr), m_ab(ab), m_state(state)
+                       WebViewAudioBackend &ab, PlayerState &state,
+                       SystemTray &tray)
+    : m_wv(wv), m_fs(fs), m_tr(tr), m_ab(ab), m_state(state), m_tray(tray)
 {
     // ── tree (folder list) ────────────────────────────────────────────────
     // Returns the folder tree. Frontend calls this once at startup.
@@ -89,6 +91,7 @@ IPCHandler::IPCHandler(saucer::smartview &wv, FileScanner &fs, TagReader &tr,
         m_state.current_index = static_cast<std::size_t>(index);
         m_state.playing = true;
         m_state.paused = false;
+        m_tray.set_active(true);
         auto &t = m_state.queue[m_state.current_index];
         std::fprintf(stderr, "[IPC] playInFolder: idx=%zu title=%s path=%s\n", m_state.current_index, t.title.c_str(), t.path.c_str());
         m_ab.load(t.path);
@@ -106,6 +109,7 @@ IPCHandler::IPCHandler(saucer::smartview &wv, FileScanner &fs, TagReader &tr,
         m_state.current_index = static_cast<std::size_t>(index);
         m_state.playing = true;
         m_state.paused = false;
+        m_tray.set_active(true);
         auto &t = m_state.queue[m_state.current_index];
         std::fprintf(stderr, "[IPC] play: idx=%zu title=%s dur=%lu path=%s\n", m_state.current_index, t.title.c_str(), static_cast<unsigned long>(t.duration_sec), t.path.c_str());
         m_ab.load(t.path);
@@ -116,12 +120,14 @@ IPCHandler::IPCHandler(saucer::smartview &wv, FileScanner &fs, TagReader &tr,
     {
         m_ab.pause();
         m_state.paused = true;
+        m_tray.set_active(false);
     });
 
     wv.expose("resume", [this]()
     {
         m_ab.play();
         m_state.paused = false;
+        m_tray.set_active(true);
     });
 
     wv.expose("next", [this]() -> int
@@ -132,6 +138,7 @@ IPCHandler::IPCHandler(saucer::smartview &wv, FileScanner &fs, TagReader &tr,
             auto &t = m_state.queue[m_state.current_index];
             m_ab.load(t.path);
             m_ab.play();
+            m_tray.set_active(true);
         }
         return static_cast<int>(m_state.current_index);
     });
@@ -144,6 +151,7 @@ IPCHandler::IPCHandler(saucer::smartview &wv, FileScanner &fs, TagReader &tr,
             auto &t = m_state.queue[m_state.current_index];
             m_ab.load(t.path);
             m_ab.play();
+            m_tray.set_active(true);
         }
         return static_cast<int>(m_state.current_index);
     });
@@ -180,7 +188,12 @@ IPCHandler::IPCHandler(saucer::smartview &wv, FileScanner &fs, TagReader &tr,
         std::fprintf(stderr, "[audioEvent] type=%s pos=%.2f dur=%.2f\n", type.c_str(), position, duration);
         m_ab.on_event(type, position, duration);
 
-        if (type == "error")
+        if (type == "ended")
+        {
+            m_state.playing = false;
+            m_tray.set_active(false);
+        }
+        else if (type == "error")
         {
             std::fprintf(stderr, "Audio error on track index %zu\n", m_state.current_index);
         }

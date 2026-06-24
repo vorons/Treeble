@@ -3,6 +3,9 @@ project(treeble LANGUAGES CXX VERSION 0.1.0)
 
 # ── C++23 ──────────────────────────────────────────────────────────────────
 set(CMAKE_CXX_STANDARD 23)
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release)
+endif()
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -90,3 +93,8 @@ target_link_libraries(treeble PRIVATE
 )
 
 target_compile_features(treeble PRIVATE cxx_std_23)
+
+# Strip in Release builds
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+  target_link_options(treeble PRIVATE -s)
+endif()
