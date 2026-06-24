@@ -19,8 +19,6 @@ export default function StatusBar() {
     ? ctxFolder.split("/").filter(Boolean).pop()
     : null;
 
-  const currentTrack = currentIndex < count ? queue[currentIndex] : null;
-
   const repeatActive = repeatMode !== "off";
 
   return (
@@ -32,8 +30,6 @@ export default function StatusBar() {
             <Folder className="size-3.5 shrink-0" />
             <span className="truncate">
               <span className="font-medium">{folderName}</span>
-              <span className="mx-1">/</span>
-              <span>{currentTrack?.title ?? "—"}</span>
               <span className="mx-1.5 text-muted-foreground">—</span>
               <span className="tabular-nums">{currentIndex + 1}/{count}</span>
             </span>

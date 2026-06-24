@@ -2,10 +2,9 @@ import { useRef, useEffect, useCallback } from "react";
 import { usePlayerStore } from "@/stores/playerStore";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toaster";
-import TitleBar from "@/components/TitleBar";
+import HeaderBar from "@/components/HeaderBar";
 import FileTree from "@/components/FileTree";
 import TrackList from "@/components/TrackList";
-import PlayerBar from "@/components/PlayerBar";
 import StatusBar from "@/components/StatusBar";
 
 export default function App() {
@@ -115,11 +114,8 @@ export default function App() {
       <div className="flex flex-col h-dvh" onContextMenu={(e) => e.preventDefault()}>
         <audio ref={audioRef} preload="auto" />
 
-        {/* Custom title bar */}
-        <TitleBar />
-
-        {/* Top bar: controls, progress, volume */}
-        <PlayerBar />
+        {/* Header bar: title bar + player controls merged */}
+        <HeaderBar />
 
         {/* Main area: sidebar + tracks */}
         <div className="flex flex-1 min-h-0">
