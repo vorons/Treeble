@@ -53,6 +53,7 @@ export default function HeaderBar() {
 
   // ── Local UI state ──
   const [muted, setMuted] = useState(false);
+  const prevVolumeRef = useRef(volume);
   const [hoverSec, setHoverSec] = useState<number | null>(null);
   const [hoverVol, setHoverVol] = useState(false);
   const progressRef = useRef<HTMLDivElement>(null);
@@ -120,8 +121,14 @@ export default function HeaderBar() {
   };
 
   const toggleMute = () => {
-    setMuted(!muted);
-    changeVolume(muted ? volume : 0);
+    if (muted) {
+      changeVolume(prevVolumeRef.current);
+      setMuted(false);
+    } else {
+      prevVolumeRef.current = volume;
+      changeVolume(0);
+      setMuted(true);
+    }
   };
 
   // Prevent drag on interactive zones
