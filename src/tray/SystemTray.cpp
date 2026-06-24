@@ -725,17 +725,8 @@ SystemTray::SystemTray(saucer::application *app, saucer::window &window)
     g_object_unref(proxy);
 
     // ── track window visibility ──────────────────────────────────────────
-    window.on<saucer::window::event::minimize>([this](bool minimized)
-    {
-        if (minimized)
-        {
-            m_impl->window.hide();
-            m_impl->visible = false;
-            dbusmenu_menuitem_property_set(m_impl->show_hide_item,
-                                            DBUSMENU_MENUITEM_PROP_LABEL, "Show");
-        }
-    });
-
+    // ponytail: minimize button simply minimizes the window to the taskbar
+    // (standard GTK behaviour), close button hides to tray — no duplication.
     window.on<saucer::window::event::close>([this]() -> saucer::policy
     {
         m_impl->window.hide();
