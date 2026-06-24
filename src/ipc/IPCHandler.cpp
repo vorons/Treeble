@@ -50,6 +50,17 @@ static std::string json_escape(const std::string &s)
     return out;
 }
 
+// Format double with '.' decimal separator regardless of locale.
+static std::string fmt_double(double val)
+{
+    std::string s = std::to_string(val);
+    // Replace locale-dependent comma with dot
+    for (auto &ch : s)
+        if (ch == ',')
+            ch = '.';
+    return s;
+}
+
 static std::string serialize_state(const SavedState &s)
 {
     return
@@ -60,7 +71,7 @@ static std::string serialize_state(const SavedState &s)
         "\"windowH\":" + std::to_string(s.windowH) + ","
         "\"lastFolder\":\"" + json_escape(s.lastFolder) + "\","
         "\"lastTrackIndex\":" + std::to_string(s.lastTrackIndex) + ","
-        "\"volume\":" + std::to_string(s.volume) + ","
+        "\"volume\":" + fmt_double(s.volume) + ","
         "\"repeatMode\":\"" + json_escape(s.repeatMode) + "\","
         "\"shuffle\":" + (s.shuffle ? "true" : "false") +
         "}";
@@ -120,7 +131,12 @@ static SavedState parse_state(const std::string &json)
     auto d = [&](const std::string &key, double def) -> double
     {
         auto v = find(key);
-        return v.empty() ? def : std::stod(v);
+        if (v.empty()) return def;
+        // Normalize decimal separator: some locales may have produced ','
+        for (auto &ch : v)
+            if (ch == ',')
+                ch = '.';
+        return std::stod(v);
     };
     auto b = [&](const std::string &key, bool def) -> bool
     {
