@@ -8,6 +8,138 @@
 #include <saucer/smartview.hpp>
 #include <algorithm>
 #include <cstdio>
+#include <fstream>
+#include <cstdlib>
+#include <filesystem>
+
+// ── persistent state helpers ───────────────────────────────────────────────
+namespace fs = std::filesystem;
+
+static std::string state_dir()
+{
+    auto *xdg = std::getenv("XDG_DATA_HOME");
+    if (xdg && *xdg)
+        return std::string(xdg) + "/treeble";
+    if (auto *home = std::getenv("HOME"))
+        return std::string(home) + "/.local/share/treeble";
+    return "/tmp/treeble-state";
+}
+
+static std::string state_path()
+{
+    return state_dir() + "/state.json";
+}
+
+// Minimal JSON writer — ponytail: avoids pulling in a full JSON library.
+static std::string json_escape(const std::string &s)
+{
+    std::string out;
+    out.reserve(s.size() + 2);
+    for (auto ch : s)
+    {
+        switch (ch)
+        {
+        case '"':  out += "\\\""; break;
+        case '\\': out += "\\\\"; break;
+        case '\n': out += "\\n";  break;
+        case '\r': out += "\\r";  break;
+        case '\t': out += "\\t";  break;
+        default:    out += ch;      break;
+        }
+    }
+    return out;
+}
+
+static std::string serialize_state(const SavedState &s)
+{
+    return
+        "{"
+        "\"windowX\":" + std::to_string(s.windowX) + ","
+        "\"windowY\":" + std::to_string(s.windowY) + ","
+        "\"windowW\":" + std::to_string(s.windowW) + ","
+        "\"windowH\":" + std::to_string(s.windowH) + ","
+        "\"lastFolder\":\"" + json_escape(s.lastFolder) + "\","
+        "\"lastTrackIndex\":" + std::to_string(s.lastTrackIndex) + ","
+        "\"volume\":" + std::to_string(s.volume) + ","
+        "\"repeatMode\":\"" + json_escape(s.repeatMode) + "\","
+        "\"shuffle\":" + (s.shuffle ? "true" : "false") +
+        "}";
+}
+
+// ponytail: crude JSON parser — works for our known flat schema.
+static SavedState parse_state(const std::string &json)
+{
+    SavedState s;
+    auto find = [&](const std::string &key) -> std::string
+    {
+        auto i = json.find("\"" + key + "\":");
+        if (i == std::string::npos)
+            return {};
+        i += key.size() + 3; // skip "key":
+        // skip whitespace
+        while (i < json.size() && (json[i] == ' ' || json[i] == '\t'))
+            ++i;
+        if (i >= json.size()) return {};
+        if (json[i] == '"') // string value
+        {
+            ++i;
+            std::string val;
+            while (i < json.size() && json[i] != '"')
+            {
+                if (json[i] == '\\' && i + 1 < json.size())
+                {
+                    ++i;
+                    switch (json[i])
+                    {
+                    case '"':  val += '"'; break;
+                    case '\\': val += '\\'; break;
+                    case 'n':  val += '\n'; break;
+                    case 'r':  val += '\r'; break;
+                    case 't':  val += '\t'; break;
+                    default:   val += json[i]; break;
+                    }
+                }
+                else
+                    val += json[i];
+                ++i;
+            }
+            return val;
+        }
+        else // number, true, false
+        {
+            auto end = json.find_first_of(",}", i);
+            if (end == std::string::npos) end = json.size();
+            return json.substr(i, end - i);
+        }
+    };
+    auto n = [&](const std::string &key, int def) -> int
+    {
+        auto v = find(key);
+        return v.empty() ? def : std::stoi(v);
+    };
+    auto d = [&](const std::string &key, double def) -> double
+    {
+        auto v = find(key);
+        return v.empty() ? def : std::stod(v);
+    };
+    auto b = [&](const std::string &key, bool def) -> bool
+    {
+        auto v = find(key);
+        if (v.empty()) return def;
+        return v == "true";
+    };
+    s.windowX       = n("windowX", 0);
+    s.windowY       = n("windowY", 0);
+    s.windowW       = n("windowW", 960);
+    s.windowH       = n("windowH", 640);
+    s.lastFolder    = find("lastFolder");
+    s.lastTrackIndex = n("lastTrackIndex", 0);
+    s.volume        = d("volume", 0.7);
+    s.repeatMode    = find("repeatMode");
+    if (s.repeatMode.empty()) s.repeatMode = "off";
+    s.shuffle       = b("shuffle", false);
+    return s;
+}
 
 // ── helpers ─────────────────────────────────────────────────────────────────
 static Track make_track(const std::string &path, TagReader &tr)
@@ -202,4 +334,75 @@ IPCHandler::IPCHandler(saucer::smartview &wv, FileScanner &fs, TagReader &tr,
     {
         return m_fs.scan_tree().path;
     });
+
+    // ── state persistence ─────────────────────────────────────────────────
+    exposeSaveStateIPC();
+
+    // Frontend calls this once at startup to get saved state
+    wv.expose("loadState", [this]() -> std::string
+    {
+        auto s = loadState();
+        return serialize_state(s);
+    });
+}
+
+SavedState IPCHandler::loadState()
+{
+    auto path = state_path();
+    std::ifstream f(path);
+    if (!f.is_open())
+        return {};
+    std::string json((std::istreambuf_iterator<char>(f)),
+                      std::istreambuf_iterator<char>());
+    return parse_state(json);
+}
+
+void IPCHandler::saveState(const SavedState &s)
+{
+    auto dir = state_dir();
+    fs::create_directories(dir);
+    auto path = state_path();
+    std::ofstream f(path);
+    if (!f.is_open())
+    {
+        std::fprintf(stderr, "[state] failed to write %s\n", path.c_str());
+        return;
+    }
+    f << serialize_state(s);
+    f.close();
+    std::fprintf(stderr, "[state] saved to %s\n", path.c_str());
+}
+
+void IPCHandler::exposeSaveStateIPC()
+{
+    m_wv.expose("saveState", [this](
+        const std::string &lastFolder,
+        int lastTrackIndex,
+        double volume,
+        const std::string &repeatMode,
+        bool shuffle)
+    {
+        m_lastSaved.lastFolder     = lastFolder;
+        m_lastSaved.lastTrackIndex = lastTrackIndex;
+        m_lastSaved.volume         = volume;
+        m_lastSaved.repeatMode     = repeatMode;
+        m_lastSaved.shuffle        = shuffle;
+        // Take window geometry from current window
+        auto &win = m_wv.parent();
+        m_lastSaved.windowX = win.position().x;
+        m_lastSaved.windowY = win.position().y;
+        m_lastSaved.windowW = win.size().w;
+        m_lastSaved.windowH = win.size().h;
+        saveState(m_lastSaved);
+    });
+}
+
+void IPCHandler::saveStateOnExit()
+{
+    auto &win = m_wv.parent();
+    m_lastSaved.windowX = win.position().x;
+    m_lastSaved.windowY = win.position().y;
+    m_lastSaved.windowW = win.size().w;
+    m_lastSaved.windowH = win.size().h;
+    saveState(m_lastSaved);
 }

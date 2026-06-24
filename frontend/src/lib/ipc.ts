@@ -94,6 +94,32 @@ export function audioEvent(
   return call("audioEvent", type, position, duration) as Promise<void>;
 }
 
+// ── Persistent state ───────────────────────────────────────────────────────
+
+export interface SavedState {
+  lastFolder: string;
+  lastTrackIndex: number;
+  volume: number;
+  repeatMode: string;
+  shuffle: boolean;
+}
+
+/** Retrieve saved state from disk (JSON string parsed by caller). */
+export function loadState(): Promise<string> {
+  return call("loadState") as Promise<string>;
+}
+
+/** Persist current player state to disk. */
+export function saveState(
+  lastFolder: string,
+  lastTrackIndex: number,
+  volume: number,
+  repeatMode: string,
+  shuffle: boolean,
+): Promise<void> {
+  return call("saveState", lastFolder, lastTrackIndex, volume, repeatMode, shuffle) as Promise<void>;
+}
+
 // ── Window controls (custom title bar) ─────────────────────────────────────
 
 export function windowMinimize(): Promise<void> {

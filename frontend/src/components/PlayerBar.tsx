@@ -23,6 +23,7 @@ export default function PlayerBar() {
   const positionSec = usePlayerStore((s) => s.positionSec);
   const queue = usePlayerStore((s) => s.queue);
   const currentIndex = usePlayerStore((s) => s.currentIndex);
+  const volume = usePlayerStore((s) => s.volume);
 
   const togglePause = usePlayerStore((s) => s.togglePause);
   const next = usePlayerStore((s) => s.next);
@@ -30,7 +31,6 @@ export default function PlayerBar() {
   const seekTo = usePlayerStore((s) => s.seekTo);
   const changeVolume = usePlayerStore((s) => s.changeVolume);
 
-  const [vol, setVol] = useState(0.7);
   const [muted, setMuted] = useState(false);
   const [hoverSec, setHoverSec] = useState<number | null>(null);
   const [hoverVol, setHoverVol] = useState(false);
@@ -69,14 +69,13 @@ export default function PlayerBar() {
 
   const handleVolume = (value: number[]) => {
     const v = value[0];
-    setVol(v);
     setMuted(false);
     changeVolume(v);
   };
 
   const toggleMute = () => {
     setMuted(!muted);
-    changeVolume(muted ? vol : 0);
+    changeVolume(muted ? volume : 0);
   };
 
   return (
@@ -147,14 +146,14 @@ export default function PlayerBar() {
       >
         {hoverVol && (
           <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-background text-foreground text-xs px-1.5 py-0.5 rounded border border-border whitespace-nowrap pointer-events-none z-10">
-            {Math.round((muted ? 0 : vol) * 100)}%
+            {Math.round((muted ? 0 : volume) * 100)}%
           </div>
         )}
         <Button variant="ghost" size="icon" onClick={toggleMute} className="size-8">
-          {muted || vol === 0 ? <VolumeX className="size-4" /> : <Volume2 className="size-4" />}
+          {muted || volume === 0 ? <VolumeX className="size-4" /> : <Volume2 className="size-4" />}
         </Button>
         <Slider
-          value={[muted ? 0 : vol]}
+          value={[muted ? 0 : volume]}
           min={0}
           max={1}
           step={0.01}

@@ -92,6 +92,23 @@ coco::stray start(saucer::application *app)
     // ResourceServer already owns the HTTP server; register with IPC
     IPCHandler        ipc(*webview, scanner, tag_reader, audio, state, tray);
 
+    // ── restore saved state ───────────────────────────────────────────────
+    {
+        auto saved = ipc.loadState();
+        if (saved.windowW > 0 && saved.windowH > 0)
+        {
+            window->set_size({.w = saved.windowW, .h = saved.windowH});
+            window->set_position({.x = saved.windowX, .y = saved.windowY});
+        }
+        // Save state on window close
+        window->on<saucer::window::event::close>([&ipc]() -> saucer::policy
+        {
+            ipc.saveStateOnExit();
+            // ponytail: always allow close
+            return saucer::policy::allow;
+        });
+    }
+
     // ── embedded frontend ─────────────────────────────────────────────────
     webview->embed(saucer::embedded::all());
 

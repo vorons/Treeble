@@ -1,27 +1,47 @@
 import { create } from "zustand";
-import { getTree, getTracks, playInFolder, play, pause, resume, seek, setVolume, audioEvent } from "@/lib/ipc";
-import type { Track, FolderTree, PlayerState } from "@/lib/ipc";
+import {
+  getTree,
+  getTracks,
+  playInFolder,
+  play,
+  pause,
+  resume,
+  seek,
+  setVolume,
+  audioEvent,
+  loadState,
+  saveState,
+} from "@/lib/ipc";
+import type { Track, FolderTree } from "@/lib/ipc";
 import { toast } from "sonner";
 
-type RepeatMode = 'off' | 'one' | 'folder';
+type RepeatMode = "off" | "one" | "folder";
 
-interface PlayerStore extends PlayerState {
-  /** Folder tree root (loaded once at startup) */
+interface PlayerStore {
+  // ── Playback state ──
+  queue: Track[];
+  currentIndex: number;
+  playing: boolean;
+  paused: boolean;
+  positionSec: number;
+
+  // ── Folder tree ──
   tree: FolderTree | null;
-  /** Tracks loaded for the currently selected folder */
   folderTracks: Track[];
-  /** Currently selected folder path */
   currentFolder: string | null;
-  /** Which folder the playback queue belongs to (null = none) */
   currentQueueFolder: string | null;
 
   // ── Repeat / Shuffle ──
   repeatMode: RepeatMode;
   shuffle: boolean;
-  /** Random permutation of queue indices — only used when shuffle is on */
   shuffleOrder: number[];
-  /** Current position inside shuffleOrder */
   shuffleIdx: number;
+
+  // ── Volume (persisted) ──
+  volume: number;
+
+  // ── Tree expansion (persisted) ──
+  expandedPaths: Set<string>;
 
   // ── Actions ──
   init: () => Promise<void>;
@@ -34,9 +54,11 @@ interface PlayerStore extends PlayerState {
   prev: () => Promise<void>;
   seekTo: (sec: number) => Promise<void>;
   changeVolume: (vol: number) => Promise<void>;
+  setExpanded: (path: string, expanded: boolean) => void;
   onAudioEvent: (type: string, pos: number, dur: number) => void;
-  /** @internal rebuild shuffle order after queue change */
   _rebuildShuffleOrder: (currentIdx: number) => void;
+  _saveState: () => Promise<void>;
+  _loadAndApplyState: () => Promise<void>;
 }
 
 export const usePlayerStore = create<PlayerStore>((set, get) => ({
@@ -50,31 +72,39 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
   folderTracks: [],
   currentFolder: null,
   currentQueueFolder: null,
-  repeatMode: 'off',
+  repeatMode: "off" as RepeatMode,
   shuffle: false,
   shuffleOrder: [],
   shuffleIdx: 0,
+  volume: 0.7,
+  expandedPaths: new Set<string>(),
 
+  // ── Init ──────────────────────────────────────────────────────────────────
   init: async () => {
     try {
       const [tree] = await Promise.all([getTree()]);
       set({ tree });
+      // Restore saved state after tree is loaded
+      await get()._loadAndApplyState();
     } catch (e) {
       console.error("init():", e);
       toast.error("Failed to load folder tree");
     }
   },
 
+  // ── Folder selection ──────────────────────────────────────────────────────
   selectFolder: async (dir: string) => {
     try {
       const tracks = await getTracks(dir);
       set({ currentFolder: dir, folderTracks: tracks });
+      get()._saveState();
     } catch (e) {
       console.error("selectFolder:", e);
       toast.error("Failed to load tracks from this folder");
     }
   },
 
+  // ── Track playback ────────────────────────────────────────────────────────
   playTrack: async (index: number) => {
     const { currentFolder, folderTracks } = get();
     if (!currentFolder) return;
@@ -88,40 +118,45 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
         currentQueueFolder: currentFolder,
         queue: folderTracks,
       });
-      // (re-)generate shuffle order so the current track is at position 0
       get()._rebuildShuffleOrder(index);
+      get()._saveState();
     } catch (e) {
       console.error("playTrack:", e);
       toast.error("Failed to play track");
     }
   },
 
+  // ── Repeat / Shuffle ─────────────────────────────────────────────────────
   cycleRepeat: () => {
     const { repeatMode } = get();
-    const next: Record<RepeatMode, RepeatMode> = { off: 'one', one: 'folder', folder: 'off' };
+    const next: Record<RepeatMode, RepeatMode> = {
+      off: "one",
+      one: "folder",
+      folder: "off",
+    };
     set({ repeatMode: next[repeatMode] });
+    get()._saveState();
   },
 
   toggleShuffle: () => {
     const { shuffle, currentIndex, queue } = get();
     if (shuffle) {
       set({ shuffle: false, shuffleOrder: [], shuffleIdx: 0 });
+      get()._saveState();
       return;
     }
     const n = queue.length;
     const order = Array.from({ length: n }, (_, i) => i);
-    // Fisher-Yates shuffle everything
     for (let i = n - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [order[i], order[j]] = [order[j], order[i]];
     }
-    // Put currentIndex at position 0 so the current track stays
     const idxOfCurrent = order.indexOf(currentIndex);
     [order[0], order[idxOfCurrent]] = [order[idxOfCurrent], order[0]];
     set({ shuffle: true, shuffleOrder: order, shuffleIdx: 0 });
+    get()._saveState();
   },
 
-  /** helper to rebuild shuffle order after queue changes */
   _rebuildShuffleOrder: (currentIdx: number) => {
     const { shuffle, queue } = get();
     if (!shuffle) return;
@@ -136,6 +171,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
     set({ shuffleOrder: order, shuffleIdx: 0 });
   },
 
+  // ── Playback controls ────────────────────────────────────────────────────
   togglePause: async () => {
     try {
       const { paused } = get();
@@ -153,7 +189,14 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
   },
 
   next: async () => {
-    const { queue, currentIndex, shuffle, shuffleOrder, shuffleIdx, repeatMode } = get();
+    const {
+      queue,
+      currentIndex,
+      shuffle,
+      shuffleOrder,
+      shuffleIdx,
+      repeatMode,
+    } = get();
     const n = queue.length;
     if (n === 0) return;
 
@@ -163,7 +206,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
       if (nextShuffleIdx < n) {
         nextIdx = shuffleOrder[nextShuffleIdx];
         set({ shuffleIdx: nextShuffleIdx });
-      } else if (repeatMode === 'folder') {
+      } else if (repeatMode === "folder") {
         nextIdx = shuffleOrder[0];
         set({ shuffleIdx: 0 });
       } else {
@@ -173,7 +216,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
       const next = currentIndex + 1;
       if (next < n) {
         nextIdx = next;
-      } else if (repeatMode === 'folder') {
+      } else if (repeatMode === "folder") {
         nextIdx = 0;
       } else {
         return;
@@ -190,7 +233,14 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
   },
 
   prev: async () => {
-    const { queue, currentIndex, shuffle, shuffleOrder, shuffleIdx, repeatMode } = get();
+    const {
+      queue,
+      currentIndex,
+      shuffle,
+      shuffleOrder,
+      shuffleIdx,
+      repeatMode,
+    } = get();
     const n = queue.length;
     if (n === 0) return;
 
@@ -200,7 +250,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
       if (prevShuffleIdx >= 0) {
         prevIdx = shuffleOrder[prevShuffleIdx];
         set({ shuffleIdx: prevShuffleIdx });
-      } else if (repeatMode === 'folder') {
+      } else if (repeatMode === "folder") {
         prevIdx = shuffleOrder[n - 1];
         set({ shuffleIdx: n - 1 });
       } else {
@@ -210,7 +260,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
       const prev = currentIndex - 1;
       if (prev >= 0) {
         prevIdx = prev;
-      } else if (repeatMode === 'folder') {
+      } else if (repeatMode === "folder") {
         prevIdx = n - 1;
       } else {
         return;
@@ -239,24 +289,47 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
   changeVolume: async (vol: number) => {
     try {
       await setVolume(vol);
+      set({ volume: vol });
+      get()._saveState();
     } catch (e) {
       console.error("changeVolume:", e);
       toast.error("Failed to change volume");
     }
   },
 
+  setExpanded: (path: string, expanded: boolean) => {
+    const { expandedPaths } = get();
+    const next = new Set(expandedPaths);
+    if (expanded) {
+      next.add(path);
+    } else {
+      next.delete(path);
+    }
+    set({ expandedPaths: next });
+  },
+
+  // ── Audio events ─────────────────────────────────────────────────────────
   onAudioEvent: async (type: string, pos: number, dur: number) => {
     try {
       await audioEvent(type, pos, dur);
       if (type === "timeupdate") {
         set({ positionSec: pos });
       } else if (type === "ended") {
-        const { queue, currentIndex, repeatMode, shuffle, shuffleOrder, shuffleIdx } = get();
+        const {
+          queue,
+          currentIndex,
+          repeatMode,
+          shuffle,
+          shuffleOrder,
+          shuffleIdx,
+        } = get();
         const n = queue.length;
-        if (n === 0) { set({ playing: false, positionSec: 0 }); return; }
+        if (n === 0) {
+          set({ playing: false, positionSec: 0 });
+          return;
+        }
 
-        if (repeatMode === 'one') {
-          // replay same track
+        if (repeatMode === "one") {
           await play(currentIndex);
           set({ positionSec: 0 });
           return;
@@ -268,7 +341,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
           if (nextShuffleIdx < n) {
             nextIdx = shuffleOrder[nextShuffleIdx];
             set({ shuffleIdx: nextShuffleIdx });
-          } else if (repeatMode === 'folder') {
+          } else if (repeatMode === "folder") {
             nextIdx = shuffleOrder[0];
             set({ shuffleIdx: 0 });
           } else {
@@ -279,7 +352,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
           const next = currentIndex + 1;
           if (next < n) {
             nextIdx = next;
-          } else if (repeatMode === 'folder') {
+          } else if (repeatMode === "folder") {
             nextIdx = 0;
           } else {
             set({ playing: false, positionSec: 0 });
@@ -293,6 +366,73 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
     } catch (e) {
       console.error("onAudioEvent:", e);
       toast.error("Playback error");
+    }
+  },
+
+  // ── State persistence ────────────────────────────────────────────────────
+  _saveState: async () => {
+    const { currentFolder, currentQueueFolder, currentIndex, volume, repeatMode, shuffle } = get();
+    try {
+      await saveState(
+        currentFolder ?? "",
+        currentQueueFolder === currentFolder ? currentIndex : 0,
+        volume,
+        repeatMode,
+        shuffle,
+      );
+    } catch (e) {
+      console.error("_saveState:", e);
+    }
+  },
+
+  _loadAndApplyState: async () => {
+    try {
+      const raw = await loadState();
+      if (!raw) return;
+      const s: Record<string, unknown> = JSON.parse(raw);
+      const lastFolder = (s.lastFolder as string) ?? "";
+      const lastTrackIndex = (s.lastTrackIndex as number) ?? 0;
+      const volume = (s.volume as number) ?? 0.7;
+      const repeatMode = (s.repeatMode as string) ?? "off";
+      const shuffle = (s.shuffle as boolean) ?? false;
+
+      // Apply volume
+      set({ volume, repeatMode: repeatMode as RepeatMode, shuffle });
+
+      // Sync volume to audio element
+      const player = (window as unknown as Record<string, any>).audioPlayer;
+      if (player) {
+        player.setVolume(volume);
+      }
+
+      // Apply repeat/shuffle to the native backend side-effect-free (setters)
+      // (no IPC needed for these — they're frontend-only state)
+
+      // Load last folder
+      if (lastFolder) {
+        const tracks = await getTracks(lastFolder);
+        set({
+          currentFolder: lastFolder,
+          currentQueueFolder: lastFolder,
+          folderTracks: tracks,
+          queue: tracks,
+          currentIndex: Math.min(lastTrackIndex, tracks.length - 1),
+        });
+
+        // Build expanded paths: all ancestors of lastFolder
+        const parts = lastFolder.split("/").filter(Boolean);
+        const expanded = new Set<string>();
+        let acc = "";
+        for (const p of parts) {
+          acc += "/" + p;
+          if (acc !== lastFolder) {
+            expanded.add(acc);
+          }
+        }
+        set({ expandedPaths: expanded });
+      }
+    } catch (e) {
+      console.error("_loadAndApplyState:", e);
     }
   },
 }));

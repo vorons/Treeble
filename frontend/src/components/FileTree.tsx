@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { usePlayerStore } from "@/stores/playerStore";
 import type { FolderTree as FT } from "@/lib/ipc";
 import { cn } from "@/lib/utils";
@@ -6,16 +6,18 @@ import { ChevronRight, ChevronDown, Folder, Music } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 function TreeNode({ node, depth }: { node: FT; depth: number }) {
-  const [expanded, setExpanded] = useState(false);
+  const expandedPaths = usePlayerStore((s) => s.expandedPaths);
+  const setExpanded = usePlayerStore((s) => s.setExpanded);
   const selectFolder = usePlayerStore((s) => s.selectFolder);
   const currentFolder = usePlayerStore((s) => s.currentFolder);
   const currentQueueFolder = usePlayerStore((s) => s.currentQueueFolder);
   const isQueueFolder = currentQueueFolder === node.path;
   const hasChildren = node.children.length > 0;
+  const expanded = expandedPaths.has(node.path);
 
   const handleClick = () => {
     selectFolder(node.path);
-    if (hasChildren) setExpanded(!expanded);
+    if (hasChildren) setExpanded(node.path, !expanded);
   };
 
   return (

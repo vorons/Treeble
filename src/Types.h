@@ -35,3 +35,16 @@ struct FolderTree
     std::string name;
     std::vector<FolderTree> children;
 };
+
+struct SavedState
+{
+    int windowX{};
+    int windowY{};
+    int windowW{};
+    int windowH{};
+    std::string lastFolder;
+    int lastTrackIndex{};
+    double volume{0.7};
+    std::string repeatMode{"off"};
+    bool shuffle{};
+};
