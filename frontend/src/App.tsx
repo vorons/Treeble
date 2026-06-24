@@ -71,7 +71,9 @@ export default function App() {
   }, []);
 
   // ── Keyboard shortcuts ──
+  const playing = usePlayerStore((s) => s.playing);
   const togglePause = usePlayerStore((s) => s.togglePause);
+  const playTrack = usePlayerStore((s) => s.playTrack);
   const seekTo = usePlayerStore((s) => s.seekTo);
   const positionSec = usePlayerStore((s) => s.positionSec);
   const queue = usePlayerStore((s) => s.queue);
@@ -86,7 +88,11 @@ export default function App() {
       switch (e.code) {
         case "Space":
           e.preventDefault();
-          togglePause();
+          if (playing) {
+            togglePause();
+          } else {
+            playTrack(currentIndex);
+          }
           break;
         case "ArrowLeft":
           e.preventDefault();
@@ -101,7 +107,7 @@ export default function App() {
           break;
       }
     },
-    [togglePause, seekTo, positionSec, queue, currentIndex],
+    [playing, togglePause, playTrack, seekTo, positionSec, queue, currentIndex],
   );
 
   useEffect(() => {
