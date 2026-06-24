@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { getTree, getTracks, playInFolder, play, pause, resume, nextTrack, prevTrack, seek, setVolume, audioEvent } from "@/lib/ipc";
+import { getTree, getTracks, playInFolder, play, pause, resume, seek, setVolume, audioEvent } from "@/lib/ipc";
 import type { Track, FolderTree, PlayerState } from "@/lib/ipc";
 import { toast } from "sonner";
 

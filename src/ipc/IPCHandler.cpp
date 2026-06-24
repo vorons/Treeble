@@ -130,32 +130,6 @@ IPCHandler::IPCHandler(saucer::smartview &wv, FileScanner &fs, TagReader &tr,
         m_tray.set_active(true);
     });
 
-    wv.expose("next", [this]() -> int
-    {
-        if (m_state.current_index + 1 < m_state.queue.size())
-        {
-            ++m_state.current_index;
-            auto &t = m_state.queue[m_state.current_index];
-            m_ab.load(t.path);
-            m_ab.play();
-            m_tray.set_active(true);
-        }
-        return static_cast<int>(m_state.current_index);
-    });
-
-    wv.expose("prev", [this]() -> int
-    {
-        if (m_state.current_index > 0)
-        {
-            --m_state.current_index;
-            auto &t = m_state.queue[m_state.current_index];
-            m_ab.load(t.path);
-            m_ab.play();
-            m_tray.set_active(true);
-        }
-        return static_cast<int>(m_state.current_index);
-    });
-
     // ── seek / volume ─────────────────────────────────────────────────────
     wv.expose("seek", [this](double position)
     {

@@ -74,14 +74,6 @@ export function resume(): Promise<void> {
   return call("resume") as Promise<void>;
 }
 
-export function nextTrack(): Promise<number> {
-  return call("next") as Promise<number>;
-}
-
-export function prevTrack(): Promise<number> {
-  return call("prev") as Promise<number>;
-}
-
 export function seek(position: number): Promise<void> {
   return call("seek", position) as Promise<void>;
 }
