@@ -26,6 +26,8 @@ public:
     void exposeSaveStateIPC();
     /** Call on window close — fills window geometry and writes to disk. */
     void saveStateOnExit();
+    /** Call on maximize event — updates maximized state without saving. */
+    void onMaximize(bool maximized);
 
 private:
     saucer::smartview &m_wv;

@@ -459,6 +459,13 @@ void IPCHandler::saveStateOnExit()
     m_lastSaved.windowY = win.position().y;
     m_lastSaved.windowW = win.size().w;
     m_lastSaved.windowH = win.size().h;
-    m_lastSaved.maximized = win.maximized();
+    // maximized is kept from the last onMaximize() call — don't read
+    // win.maximized() here because some window managers unmaximize
+    // before close, losing the state.
     saveState(m_lastSaved);
+}
+
+void IPCHandler::onMaximize(bool maximized)
+{
+    m_lastSaved.maximized = maximized;
 }

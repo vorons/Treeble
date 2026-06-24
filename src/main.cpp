@@ -110,11 +110,10 @@ coco::stray start(saucer::application *app)
             return saucer::policy::allow;
         });
 
-        // Persist maximized state immediately when it changes
-        window->on<saucer::window::event::maximize>([&ipc](bool /*maximized*/)
+        // Track maximized state without saving (avoids overwriting player state)
+        window->on<saucer::window::event::maximize>([&ipc](bool maximized)
         {
-            // Triggers IPC saveState which captures win.maximized()
-            ipc.saveStateOnExit();
+            ipc.onMaximize(maximized);
         });
     }
 
