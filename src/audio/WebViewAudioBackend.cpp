@@ -48,7 +48,13 @@ double WebViewAudioBackend::duration() const
 
 void WebViewAudioBackend::set_volume(double vol)
 {
+    m_volume = vol;
     eval(std::format("window.audioPlayer.setVolume({})", vol));
+}
+
+double WebViewAudioBackend::volume() const
+{
+    return m_volume;
 }
 
 void WebViewAudioBackend::on_event(const std::string &type, double position, double duration)

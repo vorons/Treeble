@@ -69,6 +69,7 @@ set(SOURCES
   src/audio/WebViewAudioBackend.cpp
   src/web/ResourceServer.cpp
   src/tray/SystemTray.cpp
+  src/mpris/MPRIS2.cpp
 )
 
 add_executable(treeble ${SOURCES})

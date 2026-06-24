@@ -4,6 +4,7 @@
 #include "metadata/TagReader.h"
 #include "audio/WebViewAudioBackend.h"
 #include "tray/SystemTray.h"
+#include "mpris/MPRIS2.h"
 
 #include <saucer/smartview.hpp>
 #include <algorithm>
@@ -279,6 +280,7 @@ IPCHandler::IPCHandler(saucer::smartview &wv, FileScanner &fs, TagReader &tr,
         std::fprintf(stderr, "[IPC] playInFolder: idx=%zu title=%s path=%s\n", m_state.current_index, t.title.c_str(), t.path.c_str());
         m_ab.load(t.path);
         m_ab.play();
+        if (m_mpris) m_mpris->notify();
     });
 
     wv.expose("play", [this](int index)
@@ -297,6 +299,7 @@ IPCHandler::IPCHandler(saucer::smartview &wv, FileScanner &fs, TagReader &tr,
         std::fprintf(stderr, "[IPC] play: idx=%zu title=%s dur=%lu path=%s\n", m_state.current_index, t.title.c_str(), static_cast<unsigned long>(t.duration_sec), t.path.c_str());
         m_ab.load(t.path);
         m_ab.play();
+        if (m_mpris) m_mpris->notify();
     });
 
     wv.expose("pause", [this]()
@@ -304,6 +307,7 @@ IPCHandler::IPCHandler(saucer::smartview &wv, FileScanner &fs, TagReader &tr,
         m_ab.pause();
         m_state.paused = true;
         m_tray.set_active(false);
+        if (m_mpris) m_mpris->notify();
     });
 
     wv.expose("resume", [this]()
@@ -311,6 +315,7 @@ IPCHandler::IPCHandler(saucer::smartview &wv, FileScanner &fs, TagReader &tr,
         m_ab.play();
         m_state.paused = false;
         m_tray.set_active(true);
+        if (m_mpris) m_mpris->notify();
     });
 
     // ── seek / volume ─────────────────────────────────────────────────────
@@ -349,10 +354,12 @@ IPCHandler::IPCHandler(saucer::smartview &wv, FileScanner &fs, TagReader &tr,
         {
             m_state.playing = false;
             m_tray.set_active(false);
+            if (m_mpris) m_mpris->notify();
         }
         else if (type == "error")
         {
             std::fprintf(stderr, "Audio error on track index %zu\n", m_state.current_index);
+            if (m_mpris) m_mpris->notify();
         }
     });
 
@@ -454,6 +461,12 @@ void IPCHandler::exposeSaveStateIPC()
         m_lastSaved.windowH = win.size().h;
         m_lastSaved.maximized = win.maximized();
         saveState(m_lastSaved);
+        if (m_mpris)
+        {
+            m_mpris->set_repeat_mode(repeatMode);
+            m_mpris->set_shuffle(shuffle);
+            m_mpris->notify();
+        }
     });
 }
 

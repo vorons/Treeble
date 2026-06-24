@@ -8,11 +8,15 @@
   "evidence": "MPRIS2::update(const PlayerState \u0026state) { m_impl-\u003elast_state = state; } — just stores state, prints nothing, no D-Bus signals.",
   "suggestion": "Either implement org.mpris.MediaPlayer2 on the session bus (with PropertiesChanged for track metadata, play/pause/next/prev/seek methods), or remove the class entirely if MPRIS2 is not needed yet. Currently it wastes a constructor call and an update() call per state change.",
   "created_at": "2026-06-23T20:20:35.970005766Z",
-  "updated_at": "2026-06-23T20:26:25.713631296Z",
+  "updated_at": "2026-06-24T18:25:25.038906098Z",
   "notes": [
     {
       "at": "2026-06-23T20:26:25.713631397Z",
       "text": "Removed MPRIS2 class entirely (YAGNI — was a stub with no D-Bus registration)"
+    },
+    {
+      "at": "2026-06-24T18:25:25.038906218Z",
+      "text": "Re-implemented MPRIS2 from scratch — full org.mpris.MediaPlayer2 and org.mpris.MediaPlayer2.Player interfaces via GDBus. Registered as org.mpris.MediaPlayer2.treeble on session bus."
     }
   ]
 }

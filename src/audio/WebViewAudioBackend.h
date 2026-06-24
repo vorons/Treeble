@@ -17,6 +17,7 @@ public:
     double position() const override;
     double duration() const override;
     void set_volume(double vol) override;
+    double volume() const override;
 
     // Called from IPCHandler when <audio> fires timeupdate/ended/error
     void on_event(const std::string &type, double position, double duration);
@@ -28,4 +29,5 @@ private:
     saucer::smartview &m_wv;
     mutable double m_cached_position{};
     mutable double m_cached_duration{};
+    double m_volume{0.7};
 };

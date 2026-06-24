@@ -15,4 +15,5 @@ public:
     virtual double position() const = 0;
     virtual double duration() const = 0;
     virtual void set_volume(double vol) = 0; // 0.0 – 1.0
+    virtual double volume() const = 0;
 };

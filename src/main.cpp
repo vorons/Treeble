@@ -5,6 +5,7 @@
 #include "ipc/IPCHandler.h"
 #include "web/ResourceServer.h"
 #include "tray/SystemTray.h"
+#include "mpris/MPRIS2.h"
 
 #include <saucer/smartview.hpp>
 #include <saucer/embedded/all.hpp>
@@ -91,6 +92,10 @@ coco::stray start(saucer::application *app)
 
     // ResourceServer already owns the HTTP server; register with IPC
     IPCHandler        ipc(*webview, scanner, tag_reader, audio, state, tray);
+
+    // ── MPRIS2 (D-Bus media player integration) ──────────────────────────
+    MPRIS2            mpris(app, *window, state, audio);
+    ipc.set_mpris(&mpris);
 
     // ── restore saved state ───────────────────────────────────────────────
     {

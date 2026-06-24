@@ -8,6 +8,7 @@ class FileScanner;
 class TagReader;
 class WebViewAudioBackend;
 class SystemTray;
+class MPRIS2;
 struct PlayerState;
 
 class IPCHandler
@@ -29,6 +30,9 @@ public:
     /** Call on maximize event — updates maximized state without saving. */
     void onMaximize(bool maximized);
 
+    /// Attach MPRIS2 for state-change notifications.
+    void set_mpris(MPRIS2 *mpris) { m_mpris = mpris; }
+
 private:
     saucer::smartview &m_wv;
     FileScanner &m_fs;
@@ -36,5 +40,6 @@ private:
     WebViewAudioBackend &m_ab;
     PlayerState &m_state;
     SystemTray &m_tray;
+    MPRIS2 *m_mpris{};
     SavedState m_lastSaved;
 };
