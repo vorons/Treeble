@@ -56,7 +56,7 @@ export default function TrackList() {
   };
 
   return (
-    <ScrollArea className="h-full">
+    <ScrollArea className="h-full select-none">
       <div>
         {folderTracks.length === 0 && (
           <div className="p-4 text-sm text-muted-foreground">

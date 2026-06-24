@@ -115,7 +115,7 @@ export default function App() {
 
   return (
     <TooltipProvider>
-      <div className="flex flex-col h-dvh">
+      <div className="flex flex-col h-dvh" onContextMenu={(e) => e.preventDefault()}>
         <audio ref={audioRef} preload="auto" />
 
         {/* Custom title bar */}
