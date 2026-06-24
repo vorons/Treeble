@@ -43,16 +43,11 @@ function SidebarResizer() {
   }, [w, setW]);
 
   return (
-    <>
-      <aside className="shrink-0 border-r border-border overflow-hidden" style={{ width: w }}>
-        <FileTree />
-      </aside>
-      {/* resize handle */}
-      <div
-        onMouseDown={onMouseDown}
-        className="w-1 shrink-0 cursor-col-resize bg-transparent hover:bg-primary/40 active:bg-primary/60 transition-colors relative -ml-px z-10"
-      />
-    </>
+    <aside className="shrink-0 border-r border-border overflow-hidden relative" style={{ width: w }}>
+      <FileTree />
+      {/* invisible grab handle on the right edge */}
+      <div onMouseDown={onMouseDown} className="absolute inset-y-0 -right-1 w-2 cursor-col-resize z-10" />
+    </aside>
   );
 }
 
