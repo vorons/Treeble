@@ -104,9 +104,9 @@ export interface SavedState {
   shuffle: boolean;
 }
 
-/** Retrieve saved state from disk (JSON string parsed by caller). */
-export function loadState(): Promise<string> {
-  return call("loadState") as Promise<string>;
+/** Retrieve saved state from disk. */
+export function loadState(): Promise<SavedState> {
+  return call("loadState") as Promise<SavedState>;
 }
 
 /** Persist current player state to disk. */

@@ -387,14 +387,13 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
 
   _loadAndApplyState: async () => {
     try {
-      const raw = await loadState();
-      if (!raw) return;
-      const s: Record<string, unknown> = JSON.parse(raw);
-      const lastFolder = (s.lastFolder as string) ?? "";
-      const lastTrackIndex = (s.lastTrackIndex as number) ?? 0;
-      const volume = (s.volume as number) ?? 0.7;
-      const repeatMode = (s.repeatMode as string) ?? "off";
-      const shuffle = (s.shuffle as boolean) ?? false;
+      const s = await loadState();
+      if (!s) return;
+      const lastFolder = s.lastFolder ?? "";
+      const lastTrackIndex = s.lastTrackIndex ?? 0;
+      const volume = s.volume ?? 0.7;
+      const repeatMode = s.repeatMode ?? "off";
+      const shuffle = s.shuffle ?? false;
 
       // Apply volume
       set({ volume, repeatMode: repeatMode as RepeatMode, shuffle });

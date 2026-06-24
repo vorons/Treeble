@@ -171,9 +171,29 @@ struct PlayerStateView
     double positionSec{};
 };
 
+struct SavedStateView
+{
+    int windowX{};
+    int windowY{};
+    int windowW{};
+    int windowH{};
+    std::string lastFolder;
+    int lastTrackIndex{};
+    double volume{0.7};
+    std::string repeatMode{"off"};
+    bool shuffle{};
+};
+
 static TrackView to_view(const Track &t)
 {
     return {t.path, t.title, t.artist, t.duration_sec};
+}
+
+static SavedStateView to_view(const SavedState &s)
+{
+    return {s.windowX, s.windowY, s.windowW, s.windowH,
+            s.lastFolder, s.lastTrackIndex,
+            s.volume, s.repeatMode, s.shuffle};
 }
 
 // ── constructor ─────────────────────────────────────────────────────────────
@@ -339,10 +359,9 @@ IPCHandler::IPCHandler(saucer::smartview &wv, FileScanner &fs, TagReader &tr,
     exposeSaveStateIPC();
 
     // Frontend calls this once at startup to get saved state
-    wv.expose("loadState", [this]() -> std::string
+    wv.expose("loadState", [this]() -> SavedStateView
     {
-        auto s = loadState();
-        return serialize_state(s);
+        return to_view(loadState());
     });
 }
 
