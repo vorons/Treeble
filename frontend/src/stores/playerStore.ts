@@ -39,6 +39,8 @@ interface PlayerStore {
 
   // ── Volume (persisted) ──
   volume: number;
+  muted: boolean;
+  _preMuteVolume: number;
 
   // ── Tree expansion (persisted) ──
   expandedPaths: Set<string>;
@@ -53,6 +55,7 @@ interface PlayerStore {
   next: () => Promise<void>;
   prev: () => Promise<void>;
   seekTo: (sec: number) => Promise<void>;
+  toggleMute: () => void;
   changeVolume: (vol: number) => Promise<void>;
   setExpanded: (path: string, expanded: boolean) => void;
   onAudioEvent: (type: string, pos: number, dur: number) => void;
@@ -77,6 +80,8 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
   shuffleOrder: [],
   shuffleIdx: 0,
   volume: 0.7,
+  muted: false,
+  _preMuteVolume: 0.7,
   expandedPaths: new Set<string>(),
 
   // ── Init ──────────────────────────────────────────────────────────────────
@@ -286,10 +291,21 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
     }
   },
 
+  toggleMute: () => {
+    const { muted, volume } = get();
+    if (muted) {
+      const restoreVol = get()._preMuteVolume;
+      get().changeVolume(restoreVol);
+    } else {
+      set({ _preMuteVolume: volume, muted: true });
+      get().changeVolume(0);
+    }
+  },
+
   changeVolume: async (vol: number) => {
     try {
       await setVolume(vol);
-      set({ volume: vol });
+      set({ volume: vol, muted: vol === 0 ? get().muted : false });
       get()._saveState();
     } catch (e) {
       console.error("changeVolume:", e);

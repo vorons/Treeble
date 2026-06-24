@@ -49,11 +49,11 @@ export default function HeaderBar() {
   const next = usePlayerStore((s) => s.next);
   const prev = usePlayerStore((s) => s.prev);
   const seekTo = usePlayerStore((s) => s.seekTo);
+  const muted = usePlayerStore((s) => s.muted);
+  const toggleMute = usePlayerStore((s) => s.toggleMute);
   const changeVolume = usePlayerStore((s) => s.changeVolume);
 
   // ── Local UI state ──
-  const [muted, setMuted] = useState(false);
-  const prevVolumeRef = useRef(volume);
   const [hoverSec, setHoverSec] = useState<number | null>(null);
   const [hoverVol, setHoverVol] = useState(false);
   const progressRef = useRef<HTMLDivElement>(null);
@@ -115,20 +115,7 @@ export default function HeaderBar() {
 
   // ── Volume ──
   const handleVolume = (value: number[]) => {
-    const v = value[0];
-    setMuted(false);
-    changeVolume(v);
-  };
-
-  const toggleMute = () => {
-    if (muted) {
-      changeVolume(prevVolumeRef.current);
-      setMuted(false);
-    } else {
-      prevVolumeRef.current = volume;
-      changeVolume(0);
-      setMuted(true);
-    }
+    changeVolume(value[0]);
   };
 
   // Prevent drag on interactive zones

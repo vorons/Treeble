@@ -76,8 +76,13 @@ export default function App() {
   const playTrack = usePlayerStore((s) => s.playTrack);
   const seekTo = usePlayerStore((s) => s.seekTo);
   const positionSec = usePlayerStore((s) => s.positionSec);
+  const volume = usePlayerStore((s) => s.volume);
   const queue = usePlayerStore((s) => s.queue);
   const currentIndex = usePlayerStore((s) => s.currentIndex);
+  const next = usePlayerStore((s) => s.next);
+  const prev = usePlayerStore((s) => s.prev);
+  const changeVolume = usePlayerStore((s) => s.changeVolume);
+  const toggleMute = usePlayerStore((s) => s.toggleMute);
 
   const onKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -96,18 +101,42 @@ export default function App() {
           break;
         case "ArrowLeft":
           e.preventDefault();
-          seekTo(Math.max(0, positionSec - 5));
+          if (e.ctrlKey) {
+            prev();
+          } else {
+            seekTo(Math.max(0, positionSec - 5));
+          }
           break;
         case "ArrowRight":
           e.preventDefault();
-          {
+          if (e.ctrlKey) {
+            next();
+          } else {
             const dur = currentIndex < queue.length ? queue[currentIndex].durationSec : 0;
             seekTo(Math.min(dur, positionSec + 5));
           }
           break;
+        case "ArrowUp":
+          if (e.ctrlKey) {
+            e.preventDefault();
+            changeVolume(Math.min(1, volume + 0.1));
+          }
+          break;
+        case "ArrowDown":
+          if (e.ctrlKey) {
+            e.preventDefault();
+            changeVolume(Math.max(0, volume - 0.1));
+          }
+          break;
+        case "KeyM":
+          if (e.ctrlKey) {
+            e.preventDefault();
+            toggleMute();
+          }
+          break;
       }
     },
-    [playing, togglePause, playTrack, seekTo, positionSec, queue, currentIndex],
+    [playing, togglePause, playTrack, seekTo, positionSec, volume, queue, currentIndex, next, prev, changeVolume, toggleMute],
   );
 
   useEffect(() => {
