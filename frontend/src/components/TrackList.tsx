@@ -75,7 +75,7 @@ export default function TrackList() {
                 active && !paused && "border-primary bg-amber-500/[0.03]",
                 active && paused && "border-primary/70 bg-amber-500/[0.03]",
                 !active && "border-transparent",
-              "border-b border-border/20",
+              "border-b border-border/40",
               )}
               onDoubleClick={() => playTrack(origIdx)}
             >
