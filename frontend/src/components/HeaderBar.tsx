@@ -198,7 +198,7 @@ export default function HeaderBar() {
       </div>
 
       {/* Row 2: controls · progress · volume — no drag */}
-      <div className="flex items-center gap-3 px-4 py-1.5" onMouseDown={noDrag}>
+      <div className="flex items-center gap-3 px-4 pt-1.5 pb-3.5" onMouseDown={noDrag}>
         {/* Controls */}
         <div className="flex items-center gap-1">
           <Button variant="ghost" size="icon" onClick={prev}>
