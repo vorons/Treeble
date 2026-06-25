@@ -43,8 +43,9 @@ exec "$HERE/usr/bin/treeble" "$@"
 APPRUN
 chmod +x "$APPDIR/AppRun"
 
-# ── 4. Copy icon for root-level AppImage discovery ────────────────────────
-# Some launchers look for .DirIcon or a named icon at the root of the AppDir.
+# ── 4. Root-level files for appimagetool discovery ───────────────────────
+# appimagetool requires a .desktop file and icon at the root of the AppDir.
+cp "$PROJECT_DIR/treeble.desktop" "$APPDIR/"
 cp "$PROJECT_DIR/assets/treeble.png" "$APPDIR/treeble.png"
 cp "$APPDIR/treeble.png" "$APPDIR/.DirIcon"
 

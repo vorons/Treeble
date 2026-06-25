@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `treeble.desktop` with categories `AudioVideo;Player;`, MimeType, and PlayPause action
 - `assets/treeble.png` — 256×256 app icon
 - CLI argument parsing: `--version`, `--help`, `--toggle-pause` (`src/main.cpp`)
+- `build.sh --appimage` also packages a `.AppImage` after building
 
 ### Fixed
 - **MPRIS2 Next/Previous**: D-Bus `Next` and `Previous` methods are no longer no-op.
@@ -24,6 +25,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **state.json corruption**: writes go through a temp file (`state.json.tmp`)
   with atomic `rename()`; corrupted files on load are deleted and default
   state is returned (`src/ipc/IPCHandler.cpp`).
+- **AppImage packaging**: `package-appimage.sh` now copies `.desktop` file to
+  AppDir root (required by `appimagetool`); `build.sh` gains `--appimage` flag.
 
 ## [0.5.0] — 2026-06-24
 
