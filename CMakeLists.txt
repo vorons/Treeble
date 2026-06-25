@@ -111,3 +111,23 @@ endif()
 install(TARGETS treeble RUNTIME DESTINATION bin)
 install(FILES treeble.desktop DESTINATION share/applications)
 install(FILES assets/treeble.png DESTINATION share/icons/hicolor/256x256/apps)
+
+# ── Packaging (CPack) ─────────────────────────────────────────────────────
+set(CPACK_PACKAGE_NAME "treeble")
+set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
+set(CPACK_PACKAGE_VENDOR "Treeble")
+set(CPACK_PACKAGE_CONTACT "https://github.com/vorons/Treeble")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Folder-first music player for Linux")
+set(CPACK_PACKAGE_HOMEPAGE_URL "https://github.com/vorons/Treeble")
+
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Alexey Kuznetsov")
+set(CPACK_DEBIAN_PACKAGE_SECTION "sound")
+set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
+set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+
+set(CPACK_RPM_PACKAGE_GROUP "Audio/Player")
+set(CPACK_RPM_PACKAGE_LICENSE "MIT")
+
+set(CPACK_GENERATOR "TGZ;DEB;RPM")
+
+include(CPack)

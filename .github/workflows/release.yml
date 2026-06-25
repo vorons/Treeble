@@ -35,7 +35,7 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq \
-            cmake ninja-build wget fuse g++-14 \
+            cmake ninja-build wget fuse g++-14 dpkg-dev rpm \
             libgtk-4-dev \
             libadwaita-1-dev \
             libjson-glib-dev \
@@ -56,8 +56,17 @@ jobs:
           chmod +x scripts/package-appimage.sh
           ./scripts/package-appimage.sh
 
-      - name: Upload AppImage as release asset
+      - name: Package archives (tar.gz, deb, rpm)
+        run: |
+          cd build
+          cpack
+
+      - name: Upload release assets
         uses: softprops/action-gh-release@v2
         with:
-          files: build/Treeble-${{ matrix.arch }}.AppImage
+          files: |
+            build/Treeble-${{ matrix.arch }}.AppImage
+            build/treeble-*.tar.gz
+            build/treeble-*.deb
+            build/treeble-*.rpm
           generate_release_notes: true
