@@ -13,6 +13,7 @@
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
+#include <csignal>
 #include <fstream>
 #include <string>
 
@@ -60,8 +61,26 @@ static std::string music_dir()
     return "/tmp";
 }
 
+// ── signal-safe cleanup globals ──────────────────────────────────────────
+// ponytail: globals are fine for a single-instance desktop app. If Treeble
+// ever needs multiple instances or in-process testing, these would move into
+// the application class or a dedicated lifecycle manager.
+static IPCHandler *g_ipc{};
+static saucer::application *g_app{};
+
+static void handle_signal(int sig)
+{
+    if (g_ipc)
+        g_ipc->saveStateOnExit();
+    if (g_app)
+        g_app->quit();
+    (void)sig;
+}
+
 coco::stray start(saucer::application *app)
 {
+    g_app = app;
+
     // ── local HTTP server for audio ──────────────────────────────────────
     ResourceServer audio_server;
     if (!audio_server.start())
@@ -95,6 +114,7 @@ coco::stray start(saucer::application *app)
 
     // ResourceServer already owns the HTTP server; register with IPC
     IPCHandler        ipc(*webview, scanner, tag_reader, audio, state, tray);
+    g_ipc = &ipc;
 
     // ── MPRIS2 (D-Bus media player integration) ──────────────────────────
     MPRIS2            mpris(app, *window, *webview, state, audio);
@@ -234,6 +254,9 @@ int main(int argc, char *argv[])
         std::fprintf(stderr, "Try 'treeble --help' for more information.\n");
         return 1;
     }
+
+    signal(SIGTERM, handle_signal);
+    signal(SIGINT,  handle_signal);
 
     try
     {

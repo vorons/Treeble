@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **MPRIS2 Next/Previous**: D-Bus `Next` and `Previous` methods are no longer no-op.
   They now delegate to frontend navigation via `__treeble_next()` / `__treeble_prev()`,
   respecting repeat/shuffle logic from the Zustand store.
+- **SIGTERM/SIGINT**: state is now persisted before exit when killed via `kill`,
+  `systemctl --user stop`, or session end (`src/main.cpp`).
 
 ## [0.5.0] — 2026-06-24
 

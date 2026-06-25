@@ -1,0 +1,12 @@
+{
+  "id": "f_20260625084808_7115",
+  "feature": "lifecycle",
+  "title": "SIGTERM/SIGINT state saving — реализовано",
+  "severity": "medium",
+  "status": "open",
+  "path": "src/main.cpp",
+  "evidence": "handle_signal() вызывает g_ipc-\u003esaveStateOnExit(), g_app-\u003equit()",
+  "suggestion": "Закрыто — реализовано",
+  "created_at": "2026-06-25T08:48:08.035984708Z",
+  "updated_at": "2026-06-25T08:48:08.035984919Z"
+}
