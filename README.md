@@ -1,4 +1,4 @@
-![Treeble](https://github.com/vorons/Treeble/raw/main/assets/treeble.png)
+<img src="https://github.com/vorons/Treeble/raw/main/assets/treeble.png" alt="Treeble" width="300" height="200">
 
 # Treeble
 
