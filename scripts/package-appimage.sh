@@ -36,22 +36,36 @@ install -m644 "${PROJECT_DIR}/treeble.desktop" "$APPDIR/usr/share/applications/"
 install -m644 "${PROJECT_DIR}/assets/treeble.png" \
   "$APPDIR/usr/share/icons/hicolor/256x256/apps/"
 
-# ── 3. Generate AppRun ────────────────────────────────────────────────────
+# ── 3. Bundle extra shared libraries ─────────────────────────────────────
+# These libraries are not guaranteed to be present on every target system,
+# so we bundle them inside the AppDir and point to them via LD_LIBRARY_PATH.
+mkdir -p "$APPDIR/usr/lib"
+
+# taglib — soname differs between distro versions (libtag.so.1 vs libtag.so.2)
+for lib in libtag.so* libtag_c.so* libdbusmenu-glib.so*; do
+  found="$(find /usr/lib* /lib* -maxdepth 2 -name "$lib" -print -quit 2>/dev/null || true)"
+  if [ -n "$found" ]; then
+    cp -aL "$found" "$APPDIR/usr/lib/"
+  fi
+done
+
+# ── 4. Generate AppRun ────────────────────────────────────────────────────
 # AppRun is the entry point; we just forward to the real binary.
 cat > "$APPDIR/AppRun" << 'APPRUN'
 #!/usr/bin/env bash
 HERE="$(cd "$(dirname "$0")" && pwd)"
+export LD_LIBRARY_PATH="$HERE/usr/lib:${LD_LIBRARY_PATH:-}"
 exec "$HERE/usr/bin/treeble" "$@"
 APPRUN
 chmod +x "$APPDIR/AppRun"
 
-# ── 4. Root-level files for appimagetool discovery ───────────────────────
+# ── 5. Root-level files for appimagetool discovery ───────────────────────
 # appimagetool requires a .desktop file and icon at the root of the AppDir.
 cp "$PROJECT_DIR/treeble.desktop" "$APPDIR/"
 cp "$PROJECT_DIR/assets/treeble.png" "$APPDIR/treeble.png"
 cp "$APPDIR/treeble.png" "$APPDIR/.DirIcon"
 
-# ── 5. Bundle appimagetool (if not already on PATH) ───────────────────────
+# ── 6. Bundle appimagetool (if not already on PATH) ───────────────────────
 if command -v "$APPIMAGETOOL" &>/dev/null; then
   TOOL="$APPIMAGETOOL"
 else
@@ -71,7 +85,7 @@ else
   fi
 fi
 
-# ── 6. Package ────────────────────────────────────────────────────────────
+# ── 7. Package ────────────────────────────────────────────────────────────
 OUTPUT="${OUTPUT_DIR}/${APP_NAME}-${ARCH}.AppImage"
 echo ":: Packaging AppImage → ${OUTPUT} …"
 
