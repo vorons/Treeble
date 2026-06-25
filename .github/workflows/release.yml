@@ -38,6 +38,7 @@ jobs:
             cmake ninja-build wget fuse \
             libgtk-4-dev \
             libadwaita-1-dev \
+            libjson-glib-dev \
             libwebkit2gtk-4.1-dev \
             libtag1-dev \
             libsoup-3.0-dev \
