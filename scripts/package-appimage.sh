@@ -17,6 +17,7 @@ APPIMAGETOOL="${APPIMAGETOOL:-appimagetool}"
 # ── 1. Build ──────────────────────────────────────────────────────────────
 echo ":: Building Treeble …"
 cmake -S "$PROJECT_DIR" -B "$BUILD_DIR" -G Ninja -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_CXX_COMPILER=g++-14 \
   -Dsaucer_no_compiler_version_check=ON
 cmake --build "$BUILD_DIR" --parallel
 

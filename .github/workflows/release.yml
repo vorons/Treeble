@@ -35,7 +35,7 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq \
-            cmake ninja-build wget fuse \
+            cmake ninja-build wget fuse g++-14 \
             libgtk-4-dev \
             libadwaita-1-dev \
             libjson-glib-dev \
