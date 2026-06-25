@@ -21,6 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   respecting repeat/shuffle logic from the Zustand store.
 - **SIGTERM/SIGINT**: state is now persisted before exit when killed via `kill`,
   `systemctl --user stop`, or session end (`src/main.cpp`).
+- **state.json corruption**: writes go through a temp file (`state.json.tmp`)
+  with atomic `rename()`; corrupted files on load are deleted and default
+  state is returned (`src/ipc/IPCHandler.cpp`).
 
 ## [0.5.0] — 2026-06-24
 

@@ -416,10 +416,20 @@ SavedState IPCHandler::loadState()
     }
     std::string json((std::istreambuf_iterator<char>(f)),
                       std::istreambuf_iterator<char>());
-    std::fprintf(stderr, "[state] read file: %s\n", json.c_str());
-    auto s = parse_state(json);
-    std::fprintf(stderr, "[state] parsed volume=%.2f\n", s.volume);
-    return s;
+    f.close();
+    try
+    {
+        auto s = parse_state(json);
+        std::fprintf(stderr, "[state] parsed volume=%.2f\n", s.volume);
+        return s;
+    }
+    catch (const std::exception &e)
+    {
+        std::fprintf(stderr, "[state] corrupt file (%s), removing and returning defaults\n", e.what());
+        std::error_code ec;
+        fs::remove(path, ec);
+        return {};
+    }
 }
 
 void IPCHandler::saveState(const SavedState &s)
@@ -427,14 +437,25 @@ void IPCHandler::saveState(const SavedState &s)
     auto dir = state_dir();
     fs::create_directories(dir);
     auto path = state_path();
-    std::ofstream f(path);
+    auto tmp  = path + ".tmp";
+
+    std::ofstream f(tmp);
     if (!f.is_open())
     {
-        std::fprintf(stderr, "[state] failed to write %s\n", path.c_str());
+        std::fprintf(stderr, "[state] failed to write %s\n", tmp.c_str());
         return;
     }
     f << serialize_state(s);
     f.close();
+
+    // Atomic rename — readers either see the old file or the complete new file.
+    std::error_code ec;
+    fs::rename(tmp, path, ec);
+    if (ec)
+    {
+        std::fprintf(stderr, "[state] rename failed: %s\n", ec.message().c_str());
+        return;
+    }
     std::fprintf(stderr, "[state] saved to %s\n", path.c_str());
 }
 
