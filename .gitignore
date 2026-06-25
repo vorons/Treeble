@@ -6,3 +6,5 @@ frontend/node_modules/
 embedded/
 plans/
 .codereview/
+AGENTS.md
+.saucer

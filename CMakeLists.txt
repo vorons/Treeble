@@ -82,6 +82,11 @@ target_include_directories(treeble PRIVATE ${LIBSOUP_INCLUDE_DIRS})
 target_link_directories(treeble PRIVATE ${LIBSOUP_LIBRARY_DIRS})
 
 # ── Embed frontend assets (after target exists) ─────────────────────────────
+# Clean stale embedded files from previous builds so saucer_embed doesn't
+# accumulate orphaned assets with stale hashes
+set(EMBED_OUTPUT "${CMAKE_BINARY_DIR}/embedded/saucer/embedded/files")
+file(REMOVE_RECURSE "${EMBED_OUTPUT}")
+
 saucer_embed("${FRONTEND_DIST}" TARGET treeble)
 
 target_link_libraries(treeble PRIVATE
