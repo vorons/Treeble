@@ -2,7 +2,7 @@
 
 > A folder-first music player for Linux. Think "file manager for your music."
 
-**Version 0.5.0** — [CHANGELOG](CHANGELOG.md)
+**Version 0.7.1** — [CHANGELOG](CHANGELOG.md)
 
 Treeble is a minimal, local-only music player built around a simple idea: **folders are playlists**. Browse your music directory tree on the left, click a folder to see its tracks on the right, double-click a track to play. Next/Prev stay within the current folder.
 

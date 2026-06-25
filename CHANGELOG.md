@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **GLib-CRITICAL `g_atomic_ref_count_dec` crash on track playback**:
+  double-unref of `GVariant` in `MPRIS2::notify()` (`@as` format consumes
+  the variant, explicit `g_variant_unref` caused assertion failure).
+  Also plugged two `GVariantBuilder` memory leaks in `build_metadata()`
+  and `notify()`. (`src/mpris/MPRIS2.cpp`)
+
+## [0.7.1] — 2026-06-25
+
 ### Added
 - AppImage packaging pipeline (`scripts/package-appimage.sh`)
 - GitHub Actions release workflow (`.github/workflows/release.yml`)

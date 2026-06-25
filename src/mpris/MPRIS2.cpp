@@ -170,7 +170,9 @@ static GVariant *build_metadata(const PlayerState &state)
                               g_variant_new_string(url.c_str()));
     }
 
-    return g_variant_builder_end(builder);
+    auto result = g_variant_builder_end(builder);
+    g_variant_builder_unref(builder);
+    return result;
 }
 
 // ── property getter ────────────────────────────────────────────────────────
@@ -533,6 +535,7 @@ void MPRIS2::notify()
     if (n_changed == 0)
     {
         g_variant_unref(changed);
+        g_variant_builder_unref(builder);
         return;
     }
 
@@ -548,8 +551,9 @@ void MPRIS2::notify()
                       changed, invalidated),
         nullptr);
 
-    g_variant_unref(invalidated); // changed is consumed by signal
+    g_variant_builder_unref(builder);
 }
+
 
 void MPRIS2::set_repeat_mode(const std::string &mode)
 {
