@@ -121,8 +121,16 @@ export default function App() {
       setVolume: (vol: number) => { el.volume = vol; },
     };
 
+    // Expose queue-navigation helpers for MPRIS2 (Next/Previous) and
+    // any other C++ callers that need to advance the queue without
+    // duplicating repeat/shuffle logic.
+    window.__treeble_next = () => usePlayerStore.getState().next();
+    window.__treeble_prev = () => usePlayerStore.getState().prev();
+
     return () => {
       delete (window as unknown as Record<string, unknown>).audioPlayer;
+      delete (window as unknown as Record<string, unknown>).__treeble_next;
+      delete (window as unknown as Record<string, unknown>).__treeble_prev;
     };
   }, []);
 

@@ -11,9 +11,12 @@
 #include <saucer/embedded/all.hpp>
 
 #include <cstdio>
-#include <string>
+#include <cstring>
 #include <cstdlib>
 #include <fstream>
+#include <string>
+
+#include <gio/gio.h>
 
 // ── helpers ─────────────────────────────────────────────────────────────────
 static std::string xdg_music_dir()
@@ -94,7 +97,7 @@ coco::stray start(saucer::application *app)
     IPCHandler        ipc(*webview, scanner, tag_reader, audio, state, tray);
 
     // ── MPRIS2 (D-Bus media player integration) ──────────────────────────
-    MPRIS2            mpris(app, *window, state, audio);
+    MPRIS2            mpris(app, *window, *webview, state, audio);
     ipc.set_mpris(&mpris);
 
     // ── restore saved state ───────────────────────────────────────────────
@@ -152,8 +155,86 @@ coco::stray start(saucer::application *app)
     co_await app->finish();
 }
 
-int main()
+// ── CLI helpers ────────────────────────────────────────────────────────────
+static void print_version()
 {
+    std::printf("Treeble %s\n", TREEBLE_VERSION);
+}
+
+static void print_help()
+{
+    std::printf(
+        "Usage: treeble [OPTION]...\n"
+        "Folder-first music player for Linux.\n"
+        "\n"
+        "Options:\n"
+        "  --version       print version and exit\n"
+        "  --help          print this help and exit\n"
+        "  --toggle-pause  toggle play/pause on running instance\n"
+    );
+}
+
+static int toggle_pause()
+{
+    GError *err = nullptr;
+    auto *conn = g_bus_get_sync(G_BUS_TYPE_SESSION, nullptr, &err);
+    if (!conn)
+    {
+        std::fprintf(stderr, "treeble: D-Bus connection failed: %s\n", err->message);
+        g_error_free(err);
+        return 1;
+    }
+
+    auto *reply = g_dbus_connection_call_sync(
+        conn,
+        "org.mpris.MediaPlayer2.treeble",
+        "/org/mpris/MediaPlayer2",
+        "org.mpris.MediaPlayer2.Player",
+        "PlayPause",
+        nullptr,              // parameters
+        nullptr,              // reply type
+        G_DBUS_CALL_FLAGS_NONE,
+        -1,                   // timeout (default)
+        nullptr,              // cancellable
+        &err
+    );
+
+    g_object_unref(conn);
+
+    if (!reply)
+    {
+        std::fprintf(stderr, "treeble: --toggle-pause failed: %s\n", err->message);
+        g_error_free(err);
+        return 1;
+    }
+
+    g_variant_unref(reply);
+    return 0;
+}
+
+int main(int argc, char *argv[])
+{
+    if (argc > 1)
+    {
+        if (std::strcmp(argv[1], "--version") == 0)
+        {
+            print_version();
+            return 0;
+        }
+        if (std::strcmp(argv[1], "--help") == 0)
+        {
+            print_help();
+            return 0;
+        }
+        if (std::strcmp(argv[1], "--toggle-pause") == 0)
+        {
+            return toggle_pause();
+        }
+        std::fprintf(stderr, "treeble: unknown option '%s'\n", argv[1]);
+        std::fprintf(stderr, "Try 'treeble --help' for more information.\n");
+        return 1;
+    }
+
     try
     {
         return saucer::application::create({.id = "treeble"})->run(start);

@@ -3,7 +3,7 @@
 Цель — **релиз 1.0**: минималистичный, но законченный музыкальный плеер для Linux,
 который можно установить из AppImage и пользоваться без доработок.
 
-Актуально на коммит: `8e7f2c4` (0.5.0)
+Актуально на текущий коммит (0.6.0-dev)
 
 ---
 
@@ -70,54 +70,49 @@ Exec=treeble --toggle-pause
 
 ### 3. MPRIS2 Next/Previous — реализовать
 
-**Статус:** ⚠️ Сделано наполовину
+**Статус:** ✅ Реализовано
 **Приоритет:** 🔴 Высокий
 
 **Проблема:** D-Bus методы `Next` и `Previous` в `org.mpris.MediaPlayer2.Player`
 — no-op. Любой вызов `playerctl next`, медиа-клавиша на гарнитуре или
 KDE Connect не переключают трек. MPRIS2 теряет практический смысл.
 
-**Файл:** `src/mpris/MPRIS2.cpp:355-362`
+**Решение:**
+- `MPRIS2` теперь принимает `saucer::smartview &` для вызова JS в WebView.
+- `Next`/`Previous` вызывают глобальные JS-функции `__treeble_next()` /
+  `__treeble_prev()`, которые делегируют в Zustand store (`usePlayerStore`),
+  где уже реализована вся логика навигации по очереди (repeat/shuffle).
 
-**Текущий код:**
-```cpp
-if (g_strcmp0(method_name, "Next") == 0)
-{
-    // ponytail: Next/Previous are handled by the frontend queue logic.
-    // For now, no-op
-    ok();
-    return;
-}
-```
+**Изменённые файлы:**
+- `src/mpris/MPRIS2.h` — добавлен параметр `saucer::smartview &webview`
+- `src/mpris/MPRIS2.cpp` — Next/Previous: `base.execute("__treeble_next()")`
+- `src/main.cpp` — передача `*webview` в MPRIS2
+- `frontend/src/App.tsx` — установка `window.__treeble_next/prev`
+- `frontend/src/lib/ipc.ts` — TS-декларации для глобалов
 
-**Что нужно:**
-- Добавить IPC-канал `next` и `prev` в `IPCHandler` (или сделать их
-  частью существующих `wv.expose`)
-- Вызывать `playerStore.next()` / `playerStore.prev()` из C++ через
-  `webview.eval("window.audioControls.next()")`
-- Либо, альтернатива: добавить `wv.expose("next")` и `wv.expose("prev")`
-  в IPCHandler, и в MPRIS2 вызывать их напрямую
-
-**Сложность:** S (1 файл MPRIS2.cpp + ~5 строк в IPCHandler)
+**Сложность:** S
 
 ---
 
 ### 4. `--version` и парсинг аргументов командной строки
 
-**Статус:** ❌ Не реализовано
+**Статус:** ✅ Реализовано
 **Приоритет:** 🟡 Средний
 
-**Что:** Релизный бинарник должен уметь:
-- `treeble --version` → `Treeble 0.5.0`
+**Что:** Релизный бинарник умеет:
+- `treeble --version` → `Treeble 0.6.0`
 - `treeble --help` → краткая справка
+- `treeble --toggle-pause` → отправляет D-Bus PlayPause на запущенный экземпляр
 
 **Файл:** `src/main.cpp`
 
-**Что нужно:**
-- Аргумент `--version` (печатает версию из `CMakeLists.txt` +
-  `project(treeble VERSION 0.5.0)`)
-- Аргумент `--help`
-- По желанию: `--toggle-pause` (для `.desktop` Action)
+**Решение:**
+- Версия берётся из CMake (`project(... VERSION 0.6.0)`) через
+  `target_compile_definitions` → макрос `TREEBLE_VERSION`.
+- Аргументы парсятся до создания `saucer::application`, чтобы CLI-режимы
+  работали без GUI.
+- `--toggle-pause` использует `g_dbus_connection_call_sync` для вызова
+  MPRIS2 PlayPause.
 
 ---
 

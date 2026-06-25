@@ -3,6 +3,8 @@
 #include <memory>
 #include <string>
 
+#include <saucer/smartview.hpp>
+
 class PlayerState;
 class IAudioBackend;
 
@@ -18,6 +20,7 @@ public:
     struct Impl;
 
     MPRIS2(saucer::application *app, saucer::window &window,
+           saucer::smartview &webview,
            PlayerState &state, IAudioBackend &audio);
     ~MPRIS2();
 

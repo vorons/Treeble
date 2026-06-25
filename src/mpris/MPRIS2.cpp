@@ -71,6 +71,7 @@ struct MPRIS2::Impl
 {
     saucer::application *app{};
     saucer::window &window;
+    saucer::smartview &webview;
     PlayerState &state;
     IAudioBackend &audio;
 
@@ -91,8 +92,8 @@ struct MPRIS2::Impl
     GMainLoop *loop{};
     std::thread thread;
 
-    Impl(saucer::window &win, PlayerState &st, IAudioBackend &aud)
-        : window(win), state(st), audio(aud) {}
+    Impl(saucer::window &win, saucer::smartview &wv, PlayerState &st, IAudioBackend &aud)
+        : window(win), webview(wv), state(st), audio(aud) {}
 
     ~Impl()
     {
@@ -363,15 +364,18 @@ handle_mpris_method_call(GDBusConnection *conn, const gchar * /*sender*/,
         }
         if (g_strcmp0(method_name, "Next") == 0)
         {
-            // ponytail: Next/Previous are handled by the frontend queue logic.
-            // We can't reliably advance from here without duplicating the
-            // repeat/shuffle logic. Forward the request via a future extension.
-            // For now, no-op (clients can call the root Next from IPC).
+            // ponytail: queue navigation (repeat/shuffle) is owned by the
+            // frontend Zustand store. Eval the global helper instead of
+            // duplicating that logic here.
+            auto &base = static_cast<saucer::webview &>(impl->webview);
+            base.execute("__treeble_next()");
             ok();
             return;
         }
         if (g_strcmp0(method_name, "Previous") == 0)
         {
+            auto &base = static_cast<saucer::webview &>(impl->webview);
+            base.execute("__treeble_prev()");
             ok();
             return;
         }
@@ -419,8 +423,9 @@ static const GDBusInterfaceVTable s_mpris_vtable = {
 
 // ── constructor ────────────────────────────────────────────────────────────
 MPRIS2::MPRIS2(saucer::application *app, saucer::window &window,
+               saucer::smartview &webview,
                PlayerState &state, IAudioBackend &audio)
-    : m_impl(std::make_unique<Impl>(window, state, audio))
+    : m_impl(std::make_unique<Impl>(window, webview, state, audio))
 {
     m_impl->app = app;
 

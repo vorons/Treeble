@@ -1,0 +1,60 @@
+# release.yml — Build Treeble AppImage and publish to GitHub Releases
+#
+# Triggered when a tag matching "v*" is pushed (e.g. "v1.0.0").
+# The AppImage is built on Ubuntu 22.04 (with libwebkit2gtk-4.1-dev)
+# and uploaded as a release asset.
+#
+# WebKitGTK is NOT bundled — see description.md for rationale.
+
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-appimage:
+    name: Build AppImage (${{ matrix.arch }})
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        arch: [x86_64]
+      # future: add aarch64 cross-build
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history for git describe
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq \
+            cmake ninja-build wget fuse \
+            libwebkit2gtk-4.1-dev \
+            libtag1-dev \
+            libsoup-3.0-dev \
+            libdbusmenu-glib-dev
+
+      - name: Install Node.js (for frontend build)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Package AppImage
+        run: |
+          chmod +x scripts/package-appimage.sh
+          ./scripts/package-appimage.sh
+
+      - name: Upload AppImage as release asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build/Treeble-${{ matrix.arch }}.AppImage
+          generate_release_notes: true

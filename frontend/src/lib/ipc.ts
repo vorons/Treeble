@@ -11,6 +11,8 @@ declare global {
     saucer?: {
       exposed: Record<string, (...args: unknown[]) => Promise<unknown>>;
     };
+    __treeble_next?: () => void;
+    __treeble_prev?: () => void;
   }
 }
 

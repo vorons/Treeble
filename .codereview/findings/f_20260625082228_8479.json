@@ -1,0 +1,12 @@
+{
+  "id": "f_20260625082228_8479",
+  "feature": "cli",
+  "title": "--version / --help / --toggle-pause — реализовано",
+  "severity": "medium",
+  "status": "open",
+  "path": "src/main.cpp",
+  "evidence": "print_version(), print_help(), toggle_pause() в main.cpp, TREEBLE_VERSION из CMake",
+  "suggestion": "Закрыто — реализовано",
+  "created_at": "2026-06-25T08:22:28.118573517Z",
+  "updated_at": "2026-06-25T08:22:28.118573587Z"
+}

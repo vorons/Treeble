@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(treeble LANGUAGES CXX VERSION 0.1.0)
+project(treeble LANGUAGES CXX VERSION 0.6.0)
 
 # ── C++23 ──────────────────────────────────────────────────────────────────
 set(CMAKE_CXX_STANDARD 23)
@@ -93,9 +93,16 @@ target_link_libraries(treeble PRIVATE
   PkgConfig::DBUSMENU
 )
 
+target_compile_definitions(treeble PRIVATE TREEBLE_VERSION="${PROJECT_VERSION}")
+
 target_compile_features(treeble PRIVATE cxx_std_23)
 
 # Strip in Release builds
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
   target_link_options(treeble PRIVATE -s)
 endif()
+
+# ── Install rules (for AppDir / system) ───────────────────────────────────
+install(TARGETS treeble RUNTIME DESTINATION bin)
+install(FILES treeble.desktop DESTINATION share/applications)
+install(FILES assets/treeble.png DESTINATION share/icons/hicolor/256x256/apps)
