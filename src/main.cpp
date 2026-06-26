@@ -81,6 +81,13 @@ coco::stray start(saucer::application *app)
 {
     g_app = app;
 
+    // Set WM_CLASS so the window manager associates the window with the
+    // treeble.desktop icon.  Without this GTK derives WM_CLASS from the
+    // GApplication ID ("app.saucer.treeble"), which doesn't match the
+    // desktop file name.
+    g_set_prgname("treeble");
+    g_set_application_name("Treeble");
+
     // ── local HTTP server for audio ──────────────────────────────────────
     ResourceServer audio_server;
     if (!audio_server.start())
