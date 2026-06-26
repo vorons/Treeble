@@ -8,7 +8,7 @@ Categories=AudioVideo;Player;
 MimeType=audio/mpeg;audio/flac;audio/ogg;audio/wav;audio/mp4;
 Terminal=false
 StartupNotify=true
-StartupWMClass=treeble
+StartupWMClass=app.saucer.treeble
 Actions=PlayPause;
 
 [Desktop Action PlayPause]
