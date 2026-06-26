@@ -1,5 +1,6 @@
 #include "WebViewAudioBackend.h"
 #include <saucer/smartview.hpp>
+#include <glib.h>
 #include <cstdio>
 
 WebViewAudioBackend::WebViewAudioBackend(saucer::smartview &wv)
@@ -9,10 +10,17 @@ WebViewAudioBackend::WebViewAudioBackend(saucer::smartview &wv)
 
 void WebViewAudioBackend::load(const std::string &path)
 {
-    // Sanitize path for JS string (escape backslashes, quotes)
+    // URL-encode the path so characters like '#' (fragment delimiter),
+    // spaces, '?' etc. don't break the resource-server URL.
+    // Allow '/' as-is since it's a path separator.
+    auto *escaped = g_uri_escape_string(path.c_str(), "/", true);
+    std::string encoded(escaped ? escaped : path);
+    g_free(escaped);
+
+    // Sanitize for JS string literal (escape backslashes, quotes)
     std::string safe;
-    safe.reserve(path.size() + 16);
-    for (char c : path)
+    safe.reserve(encoded.size() + 16);
+    for (char c : encoded)
     {
         if (c == '\\') safe += "\\\\";
         else if (c == '\'') safe += "\\'";

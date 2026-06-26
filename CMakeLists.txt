@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(treeble LANGUAGES CXX VERSION 0.7.2)
+project(treeble LANGUAGES CXX VERSION 0.7.3)
 
 # ── C++23 ──────────────────────────────────────────────────────────────────
 set(CMAKE_CXX_STANDARD 23)
