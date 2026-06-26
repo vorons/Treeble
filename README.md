@@ -6,8 +6,6 @@
 
 ![Screenshot](https://github.com/vorons/Treeble/raw/main/assets/screenshot.png)
 
-**Version 0.7.1**
-
 Treeble is a minimal, local-only music player built around a simple idea: **folders are playlists**. Browse your music directory tree on the left, click a folder to see its tracks on the right, double-click a track to play. Next/Prev stay within the current folder.
 
 No database. No streaming. No cloud. No bloat.
