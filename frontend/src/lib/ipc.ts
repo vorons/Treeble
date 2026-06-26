@@ -13,6 +13,7 @@ declare global {
     };
     __treeble_next?: () => void;
     __treeble_prev?: () => void;
+    __treeble_set_state?: (partial: Record<string, unknown>) => void;
   }
 }
 

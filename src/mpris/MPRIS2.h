@@ -7,6 +7,7 @@
 
 class PlayerState;
 class IAudioBackend;
+class SystemTray;
 
 namespace saucer
 {
@@ -21,7 +22,8 @@ public:
 
     MPRIS2(saucer::application *app, saucer::window &window,
            saucer::smartview &webview,
-           PlayerState &state, IAudioBackend &audio);
+           PlayerState &state, IAudioBackend &audio,
+           SystemTray &tray);
     ~MPRIS2();
 
     MPRIS2(MPRIS2 &&) noexcept;

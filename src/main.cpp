@@ -117,7 +117,7 @@ coco::stray start(saucer::application *app)
     g_ipc = &ipc;
 
     // ── MPRIS2 (D-Bus media player integration) ──────────────────────────
-    MPRIS2            mpris(app, *window, *webview, state, audio);
+    MPRIS2            mpris(app, *window, *webview, state, audio, tray);
     ipc.set_mpris(&mpris);
 
     // ── restore saved state ───────────────────────────────────────────────

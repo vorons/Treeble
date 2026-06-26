@@ -127,10 +127,17 @@ export default function App() {
     window.__treeble_next = () => usePlayerStore.getState().next();
     window.__treeble_prev = () => usePlayerStore.getState().prev();
 
+    // Expose playback-state setter for MPRIS2 (Play/Pause/Stop) which
+    // drives the audio element directly without going through IPC.
+    window.__treeble_set_state = (partial: Record<string, unknown>) => {
+      usePlayerStore.setState(partial);
+    };
+
     return () => {
       delete (window as unknown as Record<string, unknown>).audioPlayer;
       delete (window as unknown as Record<string, unknown>).__treeble_next;
       delete (window as unknown as Record<string, unknown>).__treeble_prev;
+      delete (window as unknown as Record<string, unknown>).__treeble_set_state;
     };
   }, []);
 

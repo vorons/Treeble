@@ -1,6 +1,7 @@
 #include "MPRIS2.h"
 #include "Types.h"
 #include "audio/IAudioBackend.h"
+#include "tray/SystemTray.h"
 
 #include <saucer/window.hpp>
 #include <saucer/app.hpp>
@@ -69,11 +70,13 @@ static constexpr const char s_mpris_introspection[] =
 // ── struct MPRIS2::Impl ──────────────────────────────────────────────────
 struct MPRIS2::Impl
 {
+    MPRIS2 *self{};
     saucer::application *app{};
     saucer::window &window;
     saucer::smartview &webview;
     PlayerState &state;
     IAudioBackend &audio;
+    SystemTray &tray;
 
     GDBusConnection *conn{};
     guint root_id{};
@@ -92,8 +95,8 @@ struct MPRIS2::Impl
     GMainLoop *loop{};
     std::thread thread;
 
-    Impl(saucer::window &win, saucer::smartview &wv, PlayerState &st, IAudioBackend &aud)
-        : window(win), webview(wv), state(st), audio(aud) {}
+    Impl(saucer::window &win, saucer::smartview &wv, PlayerState &st, IAudioBackend &aud, SystemTray &tr)
+        : window(win), webview(wv), state(st), audio(aud), tray(tr) {}
 
     ~Impl()
     {
@@ -335,13 +338,30 @@ handle_mpris_method_call(GDBusConnection *conn, const gchar * /*sender*/,
         if (g_strcmp0(method_name, "Play") == 0)
         {
             if (!impl->state.queue.empty())
+            {
+                impl->state.playing = true;
+                impl->state.paused = false;
                 impl->audio.play();
+                impl->tray.set_active(true);
+                {
+                    auto &base = static_cast<saucer::webview &>(impl->webview);
+                    base.execute("window.__treeble_set_state({playing:true,paused:false})");
+                }
+                if (impl->self) impl->self->notify();
+            }
             ok();
             return;
         }
         if (g_strcmp0(method_name, "Pause") == 0)
         {
+            impl->state.paused = true;
             impl->audio.pause();
+            impl->tray.set_active(false);
+            {
+                auto &base = static_cast<saucer::webview &>(impl->webview);
+                base.execute("window.__treeble_set_state({paused:true})");
+            }
+            if (impl->self) impl->self->notify();
             ok();
             return;
         }
@@ -350,17 +370,43 @@ handle_mpris_method_call(GDBusConnection *conn, const gchar * /*sender*/,
             if (!impl->state.queue.empty())
             {
                 if (impl->state.paused || !impl->state.playing)
+                {
+                    impl->state.playing = true;
+                    impl->state.paused = false;
                     impl->audio.play();
+                    impl->tray.set_active(true);
+                    {
+                        auto &base = static_cast<saucer::webview &>(impl->webview);
+                        base.execute("window.__treeble_set_state({playing:true,paused:false})");
+                    }
+                }
                 else
+                {
+                    impl->state.paused = true;
                     impl->audio.pause();
+                    impl->tray.set_active(false);
+                    {
+                        auto &base = static_cast<saucer::webview &>(impl->webview);
+                        base.execute("window.__treeble_set_state({paused:true})");
+                    }
+                }
+                if (impl->self) impl->self->notify();
             }
             ok();
             return;
         }
         if (g_strcmp0(method_name, "Stop") == 0)
         {
+            impl->state.playing = false;
+            impl->state.paused = false;
             impl->audio.pause();
             impl->audio.seek(0);
+            impl->tray.set_active(false);
+            {
+                auto &base = static_cast<saucer::webview &>(impl->webview);
+                base.execute("window.__treeble_set_state({playing:false,paused:false,positionSec:0})");
+            }
+            if (impl->self) impl->self->notify();
             ok();
             return;
         }
@@ -426,9 +472,11 @@ static const GDBusInterfaceVTable s_mpris_vtable = {
 // ── constructor ────────────────────────────────────────────────────────────
 MPRIS2::MPRIS2(saucer::application *app, saucer::window &window,
                saucer::smartview &webview,
-               PlayerState &state, IAudioBackend &audio)
-    : m_impl(std::make_unique<Impl>(window, webview, state, audio))
+               PlayerState &state, IAudioBackend &audio,
+               SystemTray &tray)
+    : m_impl(std::make_unique<Impl>(window, webview, state, audio, tray))
 {
+    m_impl->self = this;
     m_impl->app = app;
 
     GError *dbus_err = nullptr;

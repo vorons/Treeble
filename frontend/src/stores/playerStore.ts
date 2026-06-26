@@ -235,7 +235,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
 
     try {
       await play(nextIdx);
-      set({ currentIndex: nextIdx, positionSec: 0 });
+      set({ currentIndex: nextIdx, positionSec: 0, playing: true, paused: false });
     } catch (e) {
       console.error("next:", e);
       toast.error("Failed to skip to next track");
@@ -279,7 +279,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
 
     try {
       await play(prevIdx);
-      set({ currentIndex: prevIdx, positionSec: 0 });
+      set({ currentIndex: prevIdx, positionSec: 0, playing: true, paused: false });
     } catch (e) {
       console.error("prev:", e);
       toast.error("Failed to skip to previous track");
@@ -359,7 +359,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
 
         if (repeatMode === "one") {
           await play(currentIndex);
-          set({ positionSec: 0 });
+          set({ positionSec: 0, playing: true, paused: false });
           return;
         }
 
@@ -389,7 +389,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
         }
 
         await play(nextIdx);
-        set({ currentIndex: nextIdx, positionSec: 0 });
+        set({ currentIndex: nextIdx, positionSec: 0, playing: true, paused: false });
       }
     } catch (e) {
       console.error("onAudioEvent:", e);
