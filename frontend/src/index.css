@@ -18,6 +18,10 @@
   --color-accent-foreground: hsl(30 10% 92%);
   --color-destructive: hsl(0 62% 50%);
   --color-destructive-foreground: hsl(0 0% 98%);
+  --color-warning: hsl(38 92% 50%);
+  --color-warning-foreground: hsl(40 20% 10%);
+  --color-info: hsl(200 70% 50%);
+  --color-info-foreground: hsl(200 10% 98%);
   --color-border: hsl(25 5% 18%);
   --color-input: hsl(25 5% 18%);
   --color-ring: hsl(28 80% 52%);
@@ -44,6 +48,37 @@ body {
   background: hsl(25, 8%, 8%);
   color: hsl(30, 10%, 92%);
   overflow: hidden;
+}
+
+/* ── Toasts: override sonner default styles ────────────────────── */
+[data-sonner-toast][data-styled=true] {
+  background: var(--color-background) !important;
+  color: var(--color-foreground) !important;
+  border-color: var(--color-border) !important;
+}
+
+[data-sonner-toast][data-styled=true][data-type=error] {
+  background: color-mix(in oklab, var(--color-destructive) 85%, transparent) !important;
+  color: var(--color-destructive-foreground) !important;
+  border-color: color-mix(in oklab, var(--color-destructive) 30%, transparent) !important;
+}
+
+[data-sonner-toast][data-styled=true][data-type=warning] {
+  background: color-mix(in oklab, var(--color-warning) 85%, transparent) !important;
+  color: var(--color-warning-foreground) !important;
+  border-color: color-mix(in oklab, var(--color-warning) 30%, transparent) !important;
+}
+
+[data-sonner-toast][data-styled=true][data-type=info] {
+  background: color-mix(in oklab, var(--color-info) 85%, transparent) !important;
+  color: var(--color-info-foreground) !important;
+  border-color: color-mix(in oklab, var(--color-info) 30%, transparent) !important;
+}
+
+[data-sonner-toast][data-styled=true][data-type=success] {
+  background: color-mix(in oklab, var(--color-primary) 85%, transparent) !important;
+  color: var(--color-primary-foreground) !important;
+  border-color: color-mix(in oklab, var(--color-primary) 30%, transparent) !important;
 }
 
 

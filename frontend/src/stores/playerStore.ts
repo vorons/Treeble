@@ -339,6 +339,9 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
       await audioEvent(type, pos, dur);
       if (type === "timeupdate") {
         set({ positionSec: pos });
+      } else if (type === "error") {
+        toast.error("Failed to play this track");
+        set({ playing: false, paused: false, positionSec: 0 });
       } else if (type === "ended") {
         const {
           queue,
@@ -390,7 +393,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
       }
     } catch (e) {
       console.error("onAudioEvent:", e);
-      toast.error("Playback error");
+      if (type !== "error") toast.error("Playback error");
     }
   },
 
