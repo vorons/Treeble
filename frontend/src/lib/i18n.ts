@@ -2,40 +2,48 @@
  * Minimal zero-dependency i18n for Treeble.
  *
  * Locale is detected from `navigator.language` once at init.
- * All locale JSON files are statically imported at build time
- * (Vite bundles them — no dynamic imports, no extra requests).
+ * Uses Vite import.meta.glob to bundle all locale JSON files at build time.
  *
  * Fallback chain: detected locale → en.json → raw key.
  */
 
-import en from "@/locales/en.json";
-import ru from "@/locales/ru.json";
+// ponytail: eager glob bundles all JSONs. For 18 locales ~10 kB total — fine.
+const localeModules = import.meta.glob<{ default: Record<string, string> }>(
+  "/src/locales/*.json",
+  { eager: true },
+);
 
-// ── Locale registry ─────────────────────────────────────────────────────────
-// ponytail: flat pre-import for 2 locales. If more are added, switch to
-// dynamic import() or a build-time plugin.
-const LOCALES: Record<string, Record<string, string>> = { en, ru };
+const LOCALES: Record<string, Record<string, string>> = {};
+for (const [path, module] of Object.entries(localeModules)) {
+  const lang = path.split("/").pop()?.replace(".json", "") ?? "";
+  LOCALES[lang] = module.default;
+}
 
 let g_locale = "en";
-let g_dict: Record<string, string> = en;
+let g_dict: Record<string, string> = LOCALES["en"] ?? {};
 
 /** Detect preferred language from the browser/WebView. */
 function detect(): string {
   const raw = navigator.language ?? "";
-  const lang = raw.split("-")[0]?.toLowerCase() || "en";
-  return lang in LOCALES ? lang : "en";
+  const full = raw.toLowerCase();
+  // Try exact match first (e.g. es-MX, pt-BR, zh-TW)
+  if (full in LOCALES) return full;
+  // Fall back to base language (e.g. es, pt, zh)
+  const base = full.split("-")[0];
+  if (base in LOCALES) return base;
+  return "en";
 }
 
 /** Initialise i18n — call once at app startup before rendering. */
 export function init(): void {
   g_locale = detect();
-  g_dict = LOCALES[g_locale] ?? en;
+  g_dict = LOCALES[g_locale] ?? LOCALES["en"] ?? {};
   console.log("[i18n] locale:", g_locale);
 }
 
 /** Translate a key. Falls back to en.json → raw key. */
 export function t(key: string): string {
-  return g_dict[key] ?? en[key as keyof typeof en] ?? key;
+  return g_dict[key] ?? LOCALES["en"]?.[key] ?? key;
 }
 
 /** Return the active locale code (e.g. "en", "ru"). */
