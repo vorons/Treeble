@@ -50,4 +50,5 @@ private:
     MPRIS2 *m_mpris{};
     GtkWindow *m_parent_window{};
     SavedState m_lastSaved;
+    std::string m_defaultMusicRoot;
 };

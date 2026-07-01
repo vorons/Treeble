@@ -114,6 +114,16 @@ export function loadState(): Promise<SavedState> {
   return call("loadState") as Promise<SavedState>;
 }
 
+/** Return the current music root path. */
+export function getMusicRoot(): Promise<string> {
+  return call("getMusicRoot") as Promise<string>;
+}
+
+/** Return the default (initial) music root path before any user override. */
+export function getDefaultMusicRoot(): Promise<string> {
+  return call("getDefaultMusicRoot") as Promise<string>;
+}
+
 /** Open native folder picker dialog. Returns selected path or empty string. */
 export function selectFolder(): Promise<string> {
   return call("selectFolder") as Promise<string>;

@@ -12,10 +12,13 @@ export default function StatusBar() {
   const playing = usePlayerStore((s) => s.playing);
   const repeatMode = usePlayerStore((s) => s.repeatMode);
   const shuffle = usePlayerStore((s) => s.shuffle);
+  const musicRoot = usePlayerStore((s) => s.musicRoot);
+  const defaultMusicRoot = usePlayerStore((s) => s.defaultMusicRoot);
   const cycleRepeat = usePlayerStore((s) => s.cycleRepeat);
   const toggleShuffle = usePlayerStore((s) => s.toggleShuffle);
 
   const ctxFolder = currentQueueFolder ?? currentFolder;
+  const isDefaultFolder = !musicRoot || !defaultMusicRoot || musicRoot === defaultMusicRoot;
   const count = queue.length;
   const folderName = ctxFolder
     ? ctxFolder.split("/").filter(Boolean).pop()
@@ -27,7 +30,7 @@ export default function StatusBar() {
     const path = await ipcSelectFolder();
     if (!path) return;
     const newTree = await ipcSetMusicFolder(path);
-    usePlayerStore.setState({ tree: newTree, currentFolder: path, folderTracks: [] });
+    usePlayerStore.setState({ tree: newTree, currentFolder: path, folderTracks: [], musicRoot: path });
     // Load tracks for the selected folder
     const { selectFolder } = usePlayerStore.getState();
     await selectFolder(path);
@@ -38,7 +41,7 @@ export default function StatusBar() {
       {/* Left: folder picker button + folder/track info */}
       <span className="truncate flex items-center gap-1.5 min-w-0">
         <Button variant="ghost" size="icon" className="size-6 shrink-0" onClick={handleFolderClick} title={t("selectMusicFolder")}>
-          <Folder className="size-3.5 fill-current" />
+          <Folder className={`size-3.5 ${isDefaultFolder ? "text-muted-foreground" : "text-primary"}`} />
         </Button>
         {folderName && count > 0 ? (
           <span className="truncate">

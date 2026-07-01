@@ -239,7 +239,7 @@ IPCHandler::IPCHandler(saucer::smartview &wv, FileScanner &fs, TagReader &tr,
                        SystemTray &tray,
                        GtkWindow *parent_window)
     : m_wv(wv), m_fs(fs), m_tr(tr), m_ab(ab), m_state(state), m_tray(tray),
-      m_parent_window(parent_window)
+      m_parent_window(parent_window), m_defaultMusicRoot(fs.root())
 {
     // ── tree (folder list) ────────────────────────────────────────────────
     // Returns the folder tree. Frontend calls this once at startup.
@@ -392,6 +392,17 @@ IPCHandler::IPCHandler(saucer::smartview &wv, FileScanner &fs, TagReader &tr,
     wv.expose("windowStartDrag", [this]()
     {
         m_wv.parent().start_drag();
+    });
+
+    // ── music root queries ──────────────────────────────────────────────
+    wv.expose("getMusicRoot", [this]() -> std::string
+    {
+        return m_fs.root();
+    });
+
+    wv.expose("getDefaultMusicRoot", [this]() -> std::string
+    {
+        return m_defaultMusicRoot;
     });
 
     // ── home directory ────────────────────────────────────────────────────

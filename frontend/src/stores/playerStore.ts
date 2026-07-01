@@ -11,6 +11,8 @@ import {
   audioEvent,
   loadState,
   saveState,
+  getMusicRoot,
+  getDefaultMusicRoot,
 } from "@/lib/ipc";
 import { t } from "@/lib/i18n";
 import type { Track, FolderTree } from "@/lib/ipc";
@@ -48,6 +50,10 @@ interface PlayerStore {
 
   // ── Tree expansion (persisted) ──
   expandedPaths: Set<string>;
+
+  // ── Music root (for icon colouring) ──
+  musicRoot: string | null;
+  defaultMusicRoot: string | null;
 
   // ── Actions ──
   init: () => Promise<void>;
@@ -89,12 +95,18 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
   _preMuteVolume: 0.7,
   maximized: false,
   expandedPaths: new Set<string>(),
+  musicRoot: null,
+  defaultMusicRoot: null,
 
   // ── Init ──────────────────────────────────────────────────────────────────
   init: async () => {
     try {
-      const [tree] = await Promise.all([getTree()]);
-      set({ tree });
+      const [tree, musicRoot, defaultMusicRoot] = await Promise.all([
+        getTree(),
+        getMusicRoot(),
+        getDefaultMusicRoot(),
+      ]);
+      set({ tree, musicRoot, defaultMusicRoot });
       // Restore saved state after tree is loaded
       await get()._loadAndApplyState();
     } catch (e) {
