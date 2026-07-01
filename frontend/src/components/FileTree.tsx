@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { usePlayerStore } from "@/stores/playerStore";
 import type { FolderTree as FT } from "@/lib/ipc";
+import { t } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { ChevronRight, ChevronDown, Folder, Music } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -68,7 +69,7 @@ export default function FileTree() {
   if (!tree) {
     return (
       <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
-        Loading…
+        {t("loading")}
       </div>
     );
   }

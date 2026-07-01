@@ -9,8 +9,10 @@
 #include <gio/gio.h>
 
 #include <cstdio>
-#include <string>
 #include <cstdlib>
+#include <cstring>
+#include <string>
+#include <string_view>
 #include <thread>
 
 // ── embedded tray icons ──────────────────────────────────────────────────
@@ -520,6 +522,8 @@ get_sni_property(GDBusConnection *conn, const gchar *sender,
     return nullptr;
 }
 
+static const char *tr(const char *key);
+
 // ── SNI method calls ───────────────────────────────────────────────────────
 static void
 handle_sni_method_call(GDBusConnection *conn, const gchar *sender,
@@ -537,14 +541,14 @@ handle_sni_method_call(GDBusConnection *conn, const gchar *sender,
             impl->window.hide();
             impl->visible = false;
             dbusmenu_menuitem_property_set(impl->show_hide_item,
-                                            DBUSMENU_MENUITEM_PROP_LABEL, "Show");
+                                            DBUSMENU_MENUITEM_PROP_LABEL, tr("Show"));
         }
         else
         {
             impl->window.show();
             impl->visible = true;
             dbusmenu_menuitem_property_set(impl->show_hide_item,
-                                            DBUSMENU_MENUITEM_PROP_LABEL, "Hide");
+                                            DBUSMENU_MENUITEM_PROP_LABEL, tr("Hide"));
         }
         g_dbus_method_invocation_return_value(invocation, nullptr);
     }
@@ -596,6 +600,37 @@ static IconPaths write_icons()
     return {icon_bw, icon_ac};
 }
 
+// ── i18n helper for tray labels ────────────────────────────────────────────
+// ponytail: inline map for 2 locales. Extend as needed.
+static const char *tr(const char *key)
+{
+    static const auto lang = []() -> const char *
+    {
+        auto *names = g_get_language_names();
+        for (auto p = names; *p; ++p)
+        {
+            auto name = std::string_view(*p);
+            if (name.starts_with("ru")) return "ru";
+        }
+        return "en";
+    }();
+
+    // Key → (en, ru)
+    static constexpr struct { const char *key; const char *en; const char *ru; } s_table[] = {
+        {"Hide",  "Hide",  "Скрыть"},
+        {"Show",  "Show",  "Показать"},
+        {"Quit",  "Quit",  "Выйти"},
+    };
+
+    if (lang[0] == 'r' && lang[1] == 'u')
+    {
+        for (auto &e : s_table)
+            if (std::strcmp(e.key, key) == 0)
+                return e.ru;
+    }
+    return key;
+}
+
 // ── constructor ─────────────────────────────────────────────────────────────
 SystemTray::SystemTray(saucer::application *app, saucer::window &window)
     : m_impl(std::make_unique<Impl>(window))
@@ -634,7 +669,7 @@ SystemTray::SystemTray(saucer::application *app, saucer::window &window)
     m_impl->root_menu = dbusmenu_menuitem_new();
 
     auto *show_hide = dbusmenu_menuitem_new();
-    dbusmenu_menuitem_property_set(show_hide, DBUSMENU_MENUITEM_PROP_LABEL, "Hide");
+    dbusmenu_menuitem_property_set(show_hide, DBUSMENU_MENUITEM_PROP_LABEL, tr("Hide"));
     dbusmenu_menuitem_property_set_bool(show_hide, DBUSMENU_MENUITEM_PROP_ENABLED, TRUE);
     m_impl->show_hide_item = show_hide;
 
@@ -646,7 +681,7 @@ SystemTray::SystemTray(saucer::application *app, saucer::window &window)
                                       impl->visible = false;
                                       dbusmenu_menuitem_property_set(
                                           impl->show_hide_item,
-                                          DBUSMENU_MENUITEM_PROP_LABEL, "Show");
+                                          DBUSMENU_MENUITEM_PROP_LABEL, tr("Show"));
                                   }
                                   else
                                   {
@@ -654,13 +689,13 @@ SystemTray::SystemTray(saucer::application *app, saucer::window &window)
                                       impl->visible = true;
                                       dbusmenu_menuitem_property_set(
                                           impl->show_hide_item,
-                                          DBUSMENU_MENUITEM_PROP_LABEL, "Hide");
+                                          DBUSMENU_MENUITEM_PROP_LABEL, tr("Hide"));
                                   }
                               }),
                               m_impl.get());
 
     auto *quit = dbusmenu_menuitem_new();
-    dbusmenu_menuitem_property_set(quit, DBUSMENU_MENUITEM_PROP_LABEL, "Quit");
+    dbusmenu_menuitem_property_set(quit, DBUSMENU_MENUITEM_PROP_LABEL, tr("Quit"));
     dbusmenu_menuitem_property_set_bool(quit, DBUSMENU_MENUITEM_PROP_ENABLED, TRUE);
     g_signal_connect_swapped(quit, DBUSMENU_MENUITEM_SIGNAL_ITEM_ACTIVATED,
                               G_CALLBACK(+[](saucer::application *a) {
@@ -734,7 +769,7 @@ SystemTray::SystemTray(saucer::application *app, saucer::window &window)
         m_impl->window.hide();
         m_impl->visible = false;
         dbusmenu_menuitem_property_set(m_impl->show_hide_item,
-                                        DBUSMENU_MENUITEM_PROP_LABEL, "Show");
+                                        DBUSMENU_MENUITEM_PROP_LABEL, tr("Show"));
         return saucer::policy::block;
     });
 

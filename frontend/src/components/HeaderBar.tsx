@@ -1,5 +1,6 @@
 import { useRef, useCallback, useState, useEffect } from "react";
 import { usePlayerStore } from "@/stores/playerStore";
+import { t } from "@/lib/i18n";
 import {
   SkipBack,
   SkipForward,
@@ -161,7 +162,7 @@ export default function HeaderBar() {
             )
           ) : (
             <span className="text-[11px] text-muted-foreground/30 italic select-none">
-              No track selected
+              {t("noTrackSelected")}
             </span>
           )}
         </div>
@@ -171,21 +172,21 @@ export default function HeaderBar() {
           <button
             onClick={() => windowMinimize()}
             className="flex items-center justify-center size-8 rounded hover:bg-white/[0.06] transition-colors text-muted-foreground/60 hover:text-foreground/80"
-            aria-label="Minimize"
+            aria-label={t("minimize")}
           >
             <Minus className="size-3.5" />
           </button>
           <button
             onClick={() => handleMaxRestore()}
             className="flex items-center justify-center size-8 rounded hover:bg-white/[0.06] transition-colors text-muted-foreground/60 hover:text-foreground/80"
-            aria-label={maximized ? "Restore" : "Maximize"}
+            aria-label={maximized ? t("restore") : t("maximize")}
           >
             <Square className="size-3" />
           </button>
           <button
             onClick={() => windowClose()}
             className="flex items-center justify-center size-8 rounded hover:bg-red-500/70 hover:text-white transition-colors text-muted-foreground/60"
-            aria-label="Close"
+            aria-label={t("close")}
           >
             <X className="size-3.5" />
           </button>

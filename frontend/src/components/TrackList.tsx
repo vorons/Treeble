@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { usePlayerStore } from "@/stores/playerStore";
+import { t } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { Play, Pause, Music } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -36,15 +37,15 @@ export default function TrackList() {
           <Music className="size-8 text-primary" />
         </div>
         <div className="text-center">
-          <p className="text-base text-foreground font-medium">Select a folder from the tree</p>
-          <p className="text-sm text-muted-foreground mt-1">Choose a folder to browse its music files</p>
+          <p className="text-base text-foreground font-medium">{t("selectFolder")}</p>
+          <p className="text-sm text-muted-foreground mt-1">{t("chooseFolder")}</p>
         </div>
         <div className="flex flex-wrap justify-center gap-3 mt-2">
           <kbd className="px-2 py-1 text-xs bg-muted rounded border border-border text-muted-foreground">Space</kbd>
-          <span className="text-xs text-muted-foreground self-center">Play / Pause</span>
+          <span className="text-xs text-muted-foreground self-center">{t("playPause")}</span>
           <kbd className="px-2 py-1 text-xs bg-muted rounded border border-border text-muted-foreground">←</kbd>
           <kbd className="px-2 py-1 text-xs bg-muted rounded border border-border text-muted-foreground">→</kbd>
-          <span className="text-xs text-muted-foreground self-center">Seek</span>
+          <span className="text-xs text-muted-foreground self-center">{t("seek")}</span>
         </div>
       </div>
     );
@@ -60,7 +61,7 @@ export default function TrackList() {
       <div>
         {folderTracks.length === 0 && (
           <div className="p-4 text-sm text-muted-foreground">
-            No audio files in this folder.
+            {t("noAudioFiles")}
           </div>
         )}
         {folderTracks.map((track) => {

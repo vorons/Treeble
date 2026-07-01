@@ -1,4 +1,5 @@
 import { usePlayerStore } from "@/stores/playerStore";
+import { t } from "@/lib/i18n";
 import { Folder, Repeat, Repeat1, Shuffle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -40,9 +41,9 @@ export default function StatusBar() {
             {folderName}
           </>
         ) : playing ? (
-          "Playing"
+          t("playing")
         ) : (
-          "No folder selected"
+          t("noFolderSelected")
         )}
       </span>
 
@@ -56,10 +57,10 @@ export default function StatusBar() {
           onClick={cycleRepeat}
           title={
             repeatMode === "off"
-              ? "Repeat off"
+              ? t("repeatOff")
               : repeatMode === "one"
-                ? "Repeat one"
-                : "Repeat folder"
+                ? t("repeatOne")
+                : t("repeatFolder")
           }
         >
           {repeatMode === "one" ? <Repeat1 className="size-3.5" /> : <Repeat className="size-3.5" />}
@@ -71,7 +72,7 @@ export default function StatusBar() {
           size="icon"
           className={`size-6 ${shuffle ? "text-primary" : ""}`}
           onClick={toggleShuffle}
-          title={shuffle ? "Shuffle on" : "Shuffle off"}
+          title={shuffle ? t("shuffleOn") : t("shuffleOff")}
         >
           <Shuffle className="size-3.5" />
         </Button>

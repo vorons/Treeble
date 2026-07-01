@@ -12,6 +12,7 @@ import {
   loadState,
   saveState,
 } from "@/lib/ipc";
+import { t } from "@/lib/i18n";
 import type { Track, FolderTree } from "@/lib/ipc";
 import { toast } from "sonner";
 
@@ -98,7 +99,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
       await get()._loadAndApplyState();
     } catch (e) {
       console.error("init():", e);
-      toast.error("Failed to load folder tree");
+      toast.error(t("errLoadTree"));
     }
   },
 
@@ -110,7 +111,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
       get()._saveState();
     } catch (e) {
       console.error("selectFolder:", e);
-      toast.error("Failed to load tracks from this folder");
+      toast.error(t("errLoadTracks"));
     }
   },
 
@@ -132,7 +133,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
       get()._saveState();
     } catch (e) {
       console.error("playTrack:", e);
-      toast.error("Failed to play track");
+      toast.error(t("errPlayTrack"));
     }
   },
 
@@ -194,7 +195,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
       }
     } catch (e) {
       console.error("togglePause:", e);
-      toast.error("Failed to toggle playback");
+      toast.error(t("errTogglePlayback"));
     }
   },
 
@@ -238,7 +239,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
       set({ currentIndex: nextIdx, positionSec: 0, playing: true, paused: false });
     } catch (e) {
       console.error("next:", e);
-      toast.error("Failed to skip to next track");
+      toast.error(t("errNextTrack"));
     }
   },
 
@@ -282,7 +283,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
       set({ currentIndex: prevIdx, positionSec: 0, playing: true, paused: false });
     } catch (e) {
       console.error("prev:", e);
-      toast.error("Failed to skip to previous track");
+      toast.error(t("errPrevTrack"));
     }
   },
 
@@ -292,7 +293,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
       set({ positionSec: sec });
     } catch (e) {
       console.error("seekTo:", e);
-      toast.error("Failed to seek");
+      toast.error(t("errSeek"));
     }
   },
 
@@ -314,7 +315,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
       get()._saveState();
     } catch (e) {
       console.error("changeVolume:", e);
-      toast.error("Failed to change volume");
+      toast.error(t("errVolume"));
     }
   },
 
@@ -340,7 +341,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
       if (type === "timeupdate") {
         set({ positionSec: pos });
       } else if (type === "error") {
-        toast.error("Failed to play this track");
+        toast.error(t("errPlayThisTrack"));
         set({ playing: false, paused: false, positionSec: 0 });
       } else if (type === "ended") {
         const {
@@ -393,7 +394,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
       }
     } catch (e) {
       console.error("onAudioEvent:", e);
-      if (type !== "error") toast.error("Playback error");
+      if (type !== "error") toast.error(t("errPlayback"));
     }
   },
 

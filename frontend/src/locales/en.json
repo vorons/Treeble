@@ -1,0 +1,37 @@
+{
+  "loading": "Loading…",
+  "selectFolder": "Select a folder from the tree",
+  "chooseFolder": "Choose a folder to browse its music files",
+  "noAudioFiles": "No audio files in this folder.",
+  "playPause": "Play / Pause",
+  "seek": "Seek",
+
+  "noTrackSelected": "No track selected",
+  "minimize": "Minimize",
+  "maximize": "Maximize",
+  "restore": "Restore",
+  "close": "Close",
+
+  "noFolderSelected": "No folder selected",
+  "playing": "Playing",
+  "repeatOff": "Repeat off",
+  "repeatOne": "Repeat one",
+  "repeatFolder": "Repeat folder",
+  "shuffleOn": "Shuffle on",
+  "shuffleOff": "Shuffle off",
+
+  "errLoadTree": "Failed to load folder tree",
+  "errLoadTracks": "Failed to load tracks from this folder",
+  "errPlayTrack": "Failed to play track",
+  "errTogglePlayback": "Failed to toggle playback",
+  "errNextTrack": "Failed to skip to next track",
+  "errPrevTrack": "Failed to skip to previous track",
+  "errSeek": "Failed to seek",
+  "errVolume": "Failed to change volume",
+  "errPlayback": "Playback error",
+  "errPlayThisTrack": "Failed to play this track",
+
+  "hide": "Hide",
+  "show": "Show",
+  "quit": "Quit"
+}
