@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.8.3] - 2026-07-01
+
+### Added
+
+- Дерево папок теперь показывает только директории, содержащие аудиофайлы
+  (прямо или во вложенных папках) — пустые ветки скрыты.
+- Иконка папки в статус-баре переключена на outline и меняет цвет:
+  muted-foreground для дефолтной папки (~/Music / XDG_MUSIC_DIR),
+  accent (text-primary) для кастомной.
+- Новые IPC: `getMusicRoot`, `getDefaultMusicRoot`.
+
+## [0.8.2] - 2026-07-01
+
+### Added
+
+- i18n: 19 новых языков (uk, es, es-MX, fr, de, it, pt, pt-BR, zh, zh-TW,
+  ja, ko, tr, hi, id, vi, pl, cs, el).
+- i18n: поддержка региональных вариантов (es-MX, pt-BR, zh-TW).
+- i18n: автоматическая загрузка всех .json через Vite import.meta.glob.
+
+### Fixed
+
+- GTK-диалог выбора папки переведён на современный API GtkFileDialog
+  (устранены предупреждения о deprecated GtkFileChooserNative).
+
 ## [0.8.0] - 2026-07-01
 
 ### Added
@@ -13,8 +38,6 @@
 ### Fixed
 
 - G_CONNECT_SWAPPED в GTK-диалоге — падение при выборе папки.
-
-## [0.8.2] - 2026-07-01
 
 ### Added
 
