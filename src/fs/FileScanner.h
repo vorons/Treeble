@@ -15,6 +15,12 @@ public:
     /// List audio files in a directory (lazy, reads on call).
     std::vector<std::string> list_audio(const std::string &dir);
 
+    /// Change root directory (re-scan on next call).
+    void set_root(const std::string &path);
+
+    /// Get current root directory.
+    const std::string &root() const { return m_root; }
+
 private:
     void scan_tree_recursive(FolderTree &node);
     bool is_audio_ext(const std::string &ext) const;

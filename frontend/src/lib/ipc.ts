@@ -106,11 +106,22 @@ export interface SavedState {
   repeatMode: string;
   shuffle: boolean;
   maximized: boolean;
+  musicFolder: string;
 }
 
 /** Retrieve saved state from disk. */
 export function loadState(): Promise<SavedState> {
   return call("loadState") as Promise<SavedState>;
+}
+
+/** Open native folder picker dialog. Returns selected path or empty string. */
+export function selectFolder(): Promise<string> {
+  return call("selectFolder") as Promise<string>;
+}
+
+/** Set music root folder, persists it, returns updated folder tree. */
+export function setMusicFolder(path: string): Promise<FolderTree> {
+  return call("setMusicFolder", path) as Promise<FolderTree>;
 }
 
 /** Persist current player state to disk. */

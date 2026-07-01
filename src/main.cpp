@@ -17,6 +17,7 @@
 #include <fstream>
 #include <string>
 
+#include <saucer/modules/stable/webkitgtk.hpp>
 #include <gio/gio.h>
 
 // ── helpers ─────────────────────────────────────────────────────────────────
@@ -119,8 +120,11 @@ coco::stray start(saucer::application *app)
     // ── system tray icon (must be before IPC handler) ────────────────────
     SystemTray        tray(app, *window);
 
+    // Get native GtkWindow for the folder picker dialog.
+    GtkWindow *gtk_window = window->native<true>().window;
+
     // ResourceServer already owns the HTTP server; register with IPC
-    IPCHandler        ipc(*webview, scanner, tag_reader, audio, state, tray);
+    IPCHandler        ipc(*webview, scanner, tag_reader, audio, state, tray, gtk_window);
     g_ipc = &ipc;
 
     // ── MPRIS2 (D-Bus media player integration) ──────────────────────────
@@ -130,6 +134,10 @@ coco::stray start(saucer::application *app)
     // ── restore saved state ───────────────────────────────────────────────
     {
         auto saved = ipc.loadState();
+
+        // Apply saved musicFolder to FileScanner (overrides XDG default)
+        ipc.applyMusicFolder(saved);
+
         // Only restore size/position when NOT maximized — otherwise we'd
         // overwrite the window-manager's normal-size memory with screen size.
         if (!saved.maximized && saved.windowW > 0 && saved.windowH > 0)

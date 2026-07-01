@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(treeble LANGUAGES CXX VERSION 0.7.3)
+project(treeble LANGUAGES CXX VERSION 0.8.0)
 
 # ── C++23 ──────────────────────────────────────────────────────────────────
 set(CMAKE_CXX_STANDARD 23)
@@ -24,6 +24,9 @@ pkg_check_modules(TAGLIB taglib REQUIRED IMPORTED_TARGET)
 pkg_check_modules(GIO gio-unix-2.0 REQUIRED IMPORTED_TARGET)
 pkg_check_modules(LIBSOUP libsoup-3.0 REQUIRED IMPORTED_TARGET)
 pkg_check_modules(DBUSMENU dbusmenu-glib-0.4 REQUIRED IMPORTED_TARGET)
+pkg_check_modules(GTK gtk4 REQUIRED IMPORTED_TARGET)
+pkg_check_modules(ADWAITA libadwaita-1 REQUIRED IMPORTED_TARGET)
+pkg_check_modules(WEBKIT webkitgtk-6.0 REQUIRED IMPORTED_TARGET)
 
 # ── Frontend build (Vite) ──────────────────────────────────────────────────
 set(FRONTEND_DIR "${CMAKE_SOURCE_DIR}/frontend")
@@ -96,6 +99,9 @@ target_link_libraries(treeble PRIVATE
   PkgConfig::GIO
   PkgConfig::LIBSOUP
   PkgConfig::DBUSMENU
+  PkgConfig::GTK
+  PkgConfig::ADWAITA
+  PkgConfig::WEBKIT
 )
 
 target_compile_definitions(treeble PRIVATE TREEBLE_VERSION="${PROJECT_VERSION}")

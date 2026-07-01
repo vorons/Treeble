@@ -12,6 +12,7 @@
   "restore": "Restore",
   "close": "Close",
 
+  "selectMusicFolder": "Select music folder",
   "noFolderSelected": "No folder selected",
   "playing": "Playing",
   "repeatOff": "Repeat off",

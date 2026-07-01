@@ -11,12 +11,16 @@ class SystemTray;
 class MPRIS2;
 struct PlayerState;
 
+// Incomplete type is fine — only used as a pointer.
+typedef struct _GtkWindow GtkWindow;
+
 class IPCHandler
 {
 public:
     IPCHandler(saucer::smartview &wv, FileScanner &fs, TagReader &tr,
                WebViewAudioBackend &ab, PlayerState &state,
-               SystemTray &tray);
+               SystemTray &tray,
+               GtkWindow *parent_window = nullptr);
 
     /** Load saved state from disk. Returns default if no file exists. */
     SavedState loadState();
@@ -30,6 +34,9 @@ public:
     /** Call on maximize event — updates maximized state without saving. */
     void onMaximize(bool maximized);
 
+    /// Apply saved musicFolder (if non-empty) to FileScanner.
+    void applyMusicFolder(const SavedState &s);
+
     /// Attach MPRIS2 for state-change notifications.
     void set_mpris(MPRIS2 *mpris) { m_mpris = mpris; }
 
@@ -41,5 +48,6 @@ private:
     PlayerState &m_state;
     SystemTray &m_tray;
     MPRIS2 *m_mpris{};
+    GtkWindow *m_parent_window{};
     SavedState m_lastSaved;
 };

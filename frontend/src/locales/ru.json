@@ -12,6 +12,7 @@
   "restore": "Восстановить",
   "close": "Закрыть",
 
+  "selectMusicFolder": "Выбрать папку с музыкой",
   "noFolderSelected": "Папка не выбрана",
   "playing": "Воспроизведение",
   "repeatOff": "Без повтора",

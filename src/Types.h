@@ -48,4 +48,5 @@ struct SavedState
     double volume{0.7};
     std::string repeatMode{"off"};
     bool shuffle{};
+    std::string musicFolder;
 };

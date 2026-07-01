@@ -130,6 +130,8 @@ All IPC methods are exposed via `webview.expose("name", handler)` on the C++ sid
 | `windowClose` | — | — | Close window (hides to tray) |
 | `windowStartDrag` | — | — | Start window drag (custom title bar) |
 | `getHome` | — | `string` | Root music directory path |
+| `selectFolder` | — | `string` | Open native GTK folder picker dialog, return selected path or empty |
+| `setMusicFolder` | `path: string` | `FolderTree` | Change music root folder, persist, return new tree |
 
 ### Frontend → C++ (window.audioPlayer)
 
@@ -181,6 +183,7 @@ Exposed via `window.audioPlayer` by frontend, called from `WebViewAudioBackend`:
 | `volume` | double | 0.0–1.0 |
 | `repeatMode` | string | `"off"` / `"one"` / `"folder"` |
 | `shuffle` | bool | Shuffle enabled |
+| `musicFolder` | string | Custom music root (overrides XDG_MUSIC_DIR); empty = use default |
 
 ## Contract: External Interfaces
 

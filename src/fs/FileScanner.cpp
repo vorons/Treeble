@@ -9,6 +9,11 @@ FileScanner::FileScanner(std::string root_dir)
 {
 }
 
+void FileScanner::set_root(const std::string &path)
+{
+    m_root = path;
+}
+
 FolderTree FileScanner::scan_tree()
 {
     FolderTree root;
