@@ -403,47 +403,44 @@ IPCHandler::IPCHandler(saucer::smartview &wv, FileScanner &fs, TagReader &tr,
     // ── folder picker ──────────────────────────────────────────────────────
     wv.expose("selectFolder", [this]() -> std::string
     {
-        auto *dialog = gtk_file_chooser_native_new(
-            "Select Music Folder",
-            m_parent_window ? m_parent_window : nullptr,
-            GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER,
-            "_Open",
-            "_Cancel"
-        );
+        auto *dialog = gtk_file_dialog_new();
+        gtk_file_dialog_set_title(dialog, "Select Music Folder");
 
-        // GTK4 removed gtk_native_dialog_run; we use a nested main loop instead.
         std::string result;
         auto *loop = g_main_loop_new(g_main_context_default(), FALSE);
 
         auto *data = new std::pair<std::string *, GMainLoop *>{&result, loop};
-        auto handler = g_signal_connect_data(
-            dialog, "response",
-            GCallback(+[](GtkNativeDialog *dlg, int response, gpointer user) {
+        // ponytail: data is deleted inside the callback after g_main_loop_quit.
+        // gtk_file_dialog_select_folder has no GDestroyNotify parameter.
+        gtk_file_dialog_select_folder(
+            dialog,
+            m_parent_window,
+            nullptr,  // cancellable
+            GAsyncReadyCallback(+[](GObject *source, GAsyncResult *res, gpointer user) {
                 auto *d = static_cast<std::pair<std::string *, GMainLoop *> *>(user);
-                if (response == GTK_RESPONSE_ACCEPT)
+                GError *error = nullptr;
+                GFile *file = gtk_file_dialog_select_folder_finish(
+                    GTK_FILE_DIALOG(source), res, &error);
+                if (file)
                 {
-                    GFile *file = gtk_file_chooser_get_file(GTK_FILE_CHOOSER(dlg));
-                    if (file)
+                    char *path = g_file_get_path(file);
+                    if (path)
                     {
-                        char *path = g_file_get_path(file);
-                        if (path)
-                        {
-                            *d->first = path;
-                            g_free(path);
-                        }
-                        g_object_unref(file);
+                        *d->first = path;
+                        g_free(path);
                     }
+                    g_object_unref(file);
+                }
+                else if (error)
+                {
+                    g_error_free(error);
                 }
                 g_main_loop_quit(d->second);
+                delete d;
             }),
-            data,
-            GClosureNotify(+[](gpointer p, GClosure *) {
-                delete static_cast<std::pair<std::string *, GMainLoop *> *>(p);
-            }),
-            static_cast<GConnectFlags>(0)
+            data
         );
 
-        gtk_native_dialog_show(GTK_NATIVE_DIALOG(dialog));
         g_main_loop_run(loop);
 
         g_main_loop_unref(loop);

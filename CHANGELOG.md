@@ -14,13 +14,21 @@
 
 - G_CONNECT_SWAPPED в GTK-диалоге — падение при выборе папки.
 
-## Unreleased
+## [0.8.2] - 2026-07-01
 
 ### Added
 
-- i18n: автоматическое определение языка системы (navigator.language).
-  Перевод на русский для всего UI (~30 строк) и пунктов меню трея.
-  Zero-dependency: JSON-словари + функция t(key) без фреймворков.
+- i18n: 19 новых языков (uk, es, es-MX, fr, de, it, pt, pt-BR, zh, zh-TW,
+  ja, ko, tr, hi, id, vi, pl, cs, el).
+- i18n: поддержка региональных вариантов (es-MX, pt-BR, zh-TW).
+- i18n: автоматическая загрузка всех .json через Vite import.meta.glob.
+
+### Fixed
+
+- GTK-диалог выбора папки переведён на современный API GtkFileDialog
+  (устранены предупреждения о deprecated GtkFileChooserNative).
+
+## Unreleased
 
 ## [0.7.3] - 2026-06-26
 
