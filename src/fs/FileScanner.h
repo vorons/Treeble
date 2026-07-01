@@ -22,7 +22,9 @@ public:
     const std::string &root() const { return m_root; }
 
 private:
-    void scan_tree_recursive(FolderTree &node);
+    /// Recursively scan directory. Returns true if node (or its descendants) contain audio files.
+    /// Prunes branches that have no audio files.
+    bool scan_tree_recursive(FolderTree &node);
     bool is_audio_ext(const std::string &ext) const;
 
     std::string m_root;

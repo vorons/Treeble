@@ -25,19 +25,36 @@ FolderTree FileScanner::scan_tree()
     return root;
 }
 
-void FileScanner::scan_tree_recursive(FolderTree &node)
+bool FileScanner::scan_tree_recursive(FolderTree &node)
 {
     std::error_code ec;
+    bool hasAudio = false;
+    std::vector<FolderTree> valid_children;
+
     for (auto &entry : fs::directory_iterator(node.path, ec))
     {
-        if (!entry.is_directory())
-            continue;
-        FolderTree child;
-        child.path = entry.path().string();
-        child.name = entry.path().filename().string();
-        scan_tree_recursive(child);
-        node.children.push_back(std::move(child));
+        if (entry.is_directory())
+        {
+            FolderTree child;
+            child.path = entry.path().string();
+            child.name = entry.path().filename().string();
+            if (scan_tree_recursive(child))
+            {
+                valid_children.push_back(std::move(child));
+                hasAudio = true;
+            }
+        }
+        else if (entry.is_regular_file())
+        {
+            auto ext = entry.path().extension().string();
+            std::ranges::transform(ext, ext.begin(), [](unsigned char c) { return std::tolower(c); });
+            if (is_audio_ext(ext))
+                hasAudio = true;
+        }
     }
+
+    node.children = std::move(valid_children);
+    return hasAudio;
 }
 
 std::vector<std::string> FileScanner::list_audio(const std::string &dir)
